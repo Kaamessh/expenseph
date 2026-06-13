@@ -50,7 +50,13 @@ class ExpenseDebtTrackerApp extends StatelessWidget {
           backgroundColor: Color(0xFF1E1E2E),
         ),
       ),
-      home: apiConfig.isLoggedIn ? const MainNavigationShell() : const AuthPage(),
+      home: !apiConfig.isInitialized
+          ? const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(color: Colors.cyanAccent),
+              ),
+            )
+          : (apiConfig.isLoggedIn ? const MainNavigationShell() : const AuthPage()),
     );
   }
 }
@@ -64,7 +70,7 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedPageIndex = 0;
-  static const String appVersion = "1.3.0"; // Local version of the app
+  static const String appVersion = "1.4.0"; // Local version of the app
 
   @override
   void initState() {
@@ -320,7 +326,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    'v1.3.0 • Supabase Connected',
+                    'v1.4.0 • Supabase Connected',
                     style: TextStyle(color: Colors.grey[600], fontSize: 11),
                   ),
                 ),

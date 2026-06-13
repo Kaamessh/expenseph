@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/transaction.dart';
 import '../models/debt.dart';
 
@@ -10,44 +11,84 @@ class ApiConfig extends ChangeNotifier {
   String? _userId;
   String? _email;
   String? _mobileNumber;
+  bool _isInitialized = false;
 
   ApiConfig() {
-    if (kIsWeb) {
-      try {
-        _baseUrl = Uri.base.origin;
-      } catch (e) {
-        // fallback
-      }
-    }
+    _loadSession();
   }
 
+  bool get isInitialized => _isInitialized;
   String get baseUrl => _baseUrl;
   String? get userId => _userId;
   String? get email => _email;
   String? get mobileNumber => _mobileNumber;
   bool get isLoggedIn => _userId != null;
 
-  void updateBaseUrl(String newUrl) {
+  Future<void> _loadSession() async {
+    if (kIsWeb) {
+      try {
+        _baseUrl = Uri.base.origin;
+      } catch (e) {
+        // fallback
+      }
+    } else {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        _baseUrl = prefs.getString('baseUrl') ?? _baseUrl;
+        _userId = prefs.getString('userId');
+        _email = prefs.getString('email');
+        _mobileNumber = prefs.getString('mobileNumber');
+      } catch (e) {
+        // fallback
+      }
+    }
+    _isInitialized = true;
+    notifyListeners();
+  }
+
+  void updateBaseUrl(String newUrl) async {
     if (newUrl.endsWith('/')) {
       _baseUrl = newUrl.substring(0, newUrl.length - 1);
     } else {
       _baseUrl = newUrl;
     }
     notifyListeners();
+    if (!kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('baseUrl', _baseUrl);
+      } catch (_) {}
+    }
   }
 
-  void setSession({required String userId, required String email, required String mobileNumber}) {
+  void setSession({required String userId, required String email, required String mobileNumber}) async {
     _userId = userId;
     _email = email;
     _mobileNumber = mobileNumber;
     notifyListeners();
+    if (!kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('userId', userId);
+        await prefs.setString('email', email);
+        await prefs.setString('mobileNumber', mobileNumber);
+      } catch (_) {}
+    }
   }
 
-  void clearSession() {
+  void clearSession() async {
     _userId = null;
     _email = null;
     _mobileNumber = null;
     notifyListeners();
+    if (!kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('userId');
+        await prefs.remove('email');
+        await prefs.remove('mobileNumber');
+      } catch (_) {}
+    }
   }
 }
 
