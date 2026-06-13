@@ -45,7 +45,7 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Could not load transactions. Please check your API URL in Settings.';
+        _errorMessage = 'Could not load transactions: ${e.toString().replaceAll('Exception:', '').trim()}';
       });
     }
   }

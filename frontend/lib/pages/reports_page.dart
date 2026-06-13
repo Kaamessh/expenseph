@@ -43,7 +43,7 @@ class _ReportsPageState extends State<ReportsPage> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Could not load reports. Please check your connection.';
+        _errorMessage = 'Could not load reports: ${e.toString().replaceAll('Exception:', '').trim()}';
       });
     }
   }

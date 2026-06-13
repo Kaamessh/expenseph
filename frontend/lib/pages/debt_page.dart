@@ -37,7 +37,7 @@ class _DebtPageState extends State<DebtPage> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Could not load debts. Verify backend configuration.';
+        _errorMessage = 'Could not load debts: ${e.toString().replaceAll('Exception:', '').trim()}';
       });
     }
   }
