@@ -70,6 +70,5 @@ jobs:
           if ! git diff-index --quiet HEAD; then
             git commit -m "chore: compile and deploy flutter web assets"
             git push origin main
-          else
-            echo "No changes in compiled assets."
           fi
+# Trigger comment to start fresh build
