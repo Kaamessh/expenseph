@@ -16,7 +16,7 @@ load_dotenv()
 app = FastAPI(
     title="Expense & Debt Tracker API",
     description="Backend API serving the Expense & Debt Tracker app, connected to Supabase.",
-    version="1.2.0"
+    version="1.3.0"
 )
 
 # Enable CORS for Flutter Client access
@@ -170,7 +170,7 @@ def get_health():
 @app.get("/api/version")
 def get_version():
     return {
-        "version": "1.2.0",
+        "version": "1.3.0",
         "apk_url": "https://expenseph.vercel.app/app-release.apk"
     }
 
@@ -240,8 +240,12 @@ def login_user(cred: UserLogin):
 
     if not is_mock_mode:
         try:
-            # Query by email OR mobile_number
-            res = supabase_client.table("users").select("*").or_(f"email.eq.{username},mobile_number.eq.{username}").execute()
+            # Query by email first
+            res = supabase_client.table("users").select("*").eq("email", username).execute()
+            # If not found by email, query by mobile number
+            if not res.data:
+                res = supabase_client.table("users").select("*").eq("mobile_number", username).execute()
+                
             if not res.data:
                 raise HTTPException(status_code=401, detail="Invalid username (email/mobile) or password")
             
