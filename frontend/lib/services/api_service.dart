@@ -7,6 +7,9 @@ import '../models/debt.dart';
 class ApiConfig extends ChangeNotifier {
   // Default URL: Vercel standard placeholder or local development API
   String _baseUrl = 'http://127.0.0.1:8000';
+  String? _userId;
+  String? _email;
+  String? _mobileNumber;
 
   ApiConfig() {
     if (kIsWeb) {
@@ -19,6 +22,10 @@ class ApiConfig extends ChangeNotifier {
   }
 
   String get baseUrl => _baseUrl;
+  String? get userId => _userId;
+  String? get email => _email;
+  String? get mobileNumber => _mobileNumber;
+  bool get isLoggedIn => _userId != null;
 
   void updateBaseUrl(String newUrl) {
     if (newUrl.endsWith('/')) {
@@ -26,6 +33,20 @@ class ApiConfig extends ChangeNotifier {
     } else {
       _baseUrl = newUrl;
     }
+    notifyListeners();
+  }
+
+  void setSession({required String userId, required String email, required String mobileNumber}) {
+    _userId = userId;
+    _email = email;
+    _mobileNumber = mobileNumber;
+    notifyListeners();
+  }
+
+  void clearSession() {
+    _userId = null;
+    _email = null;
+    _mobileNumber = null;
     notifyListeners();
   }
 }
@@ -37,10 +58,84 @@ class ApiService {
 
   String get _url => config.baseUrl;
 
+  Map<String, String> get _headers {
+    final headers = {'Content-Type': 'application/json'};
+    if (config.userId != null) {
+      headers['X-User-Id'] = config.userId!;
+    }
+    return headers;
+  }
+
+  // --- Auth API ---
+
+  Future<Map<String, dynamic>> login(String username, String password) async {
+    final response = await http.post(
+      Uri.parse('$_url/api/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      config.setSession(
+        userId: data['user_id'],
+        email: data['email'],
+        mobileNumber: data['mobile_number'],
+      );
+      return data;
+    } else {
+      String errMsg = 'Failed to login';
+      try {
+        final err = jsonDecode(response.body);
+        errMsg = err['detail'] ?? errMsg;
+      } catch (_) {}
+      throw Exception(errMsg);
+    }
+  }
+
+  Future<Map<String, dynamic>> register({
+    required String email,
+    required String mobileNumber,
+    required String password,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_url/api/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'mobile_number': mobileNumber,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      config.setSession(
+        userId: data['user_id'],
+        email: data['email'],
+        mobileNumber: data['mobile_number'],
+      );
+      return data;
+    } else {
+      String errMsg = 'Failed to register';
+      try {
+        final err = jsonDecode(response.body);
+        errMsg = err['detail'] ?? errMsg;
+      } catch (_) {}
+      throw Exception(errMsg);
+    }
+  }
+
   // --- Transactions ---
 
   Future<List<AppTransaction>> getTransactions() async {
-    final response = await http.get(Uri.parse('$_url/api/transactions'));
+    final response = await http.get(
+      Uri.parse('$_url/api/transactions'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       final List<dynamic> body = jsonDecode(response.body);
       return body.map((item) => AppTransaction.fromJson(item)).toList();
@@ -57,7 +152,7 @@ class ApiService {
   }) async {
     final response = await http.post(
       Uri.parse('$_url/api/transactions'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
       body: jsonEncode({
         'type': type,
         'amount': amount,
@@ -74,7 +169,10 @@ class ApiService {
   }
 
   Future<void> deleteTransaction(String id) async {
-    final response = await http.delete(Uri.parse('$_url/api/transactions/$id'));
+    final response = await http.delete(
+      Uri.parse('$_url/api/transactions/$id'),
+      headers: _headers,
+    );
     if (response.statusCode != 200) {
       throw Exception('Failed to delete transaction: ${response.body}');
     }
@@ -83,7 +181,10 @@ class ApiService {
   // --- Debts ---
 
   Future<List<Debt>> getDebts() async {
-    final response = await http.get(Uri.parse('$_url/api/debts'));
+    final response = await http.get(
+      Uri.parse('$_url/api/debts'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       final List<dynamic> body = jsonDecode(response.body);
       return body.map((item) => Debt.fromJson(item)).toList();
@@ -100,7 +201,7 @@ class ApiService {
   }) async {
     final response = await http.post(
       Uri.parse('$_url/api/debts'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
       body: jsonEncode({
         'person_name': personName,
         'original_amount': originalAmount,
@@ -125,7 +226,7 @@ class ApiService {
   }) async {
     final response = await http.put(
       Uri.parse('$_url/api/debts/$id'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers,
       body: jsonEncode({
         'person_name': personName,
         'original_amount': originalAmount,
@@ -142,7 +243,10 @@ class ApiService {
   }
 
   Future<void> deleteDebt(String id) async {
-    final response = await http.delete(Uri.parse('$_url/api/debts/$id'));
+    final response = await http.delete(
+      Uri.parse('$_url/api/debts/$id'),
+      headers: _headers,
+    );
     if (response.statusCode != 200) {
       throw Exception('Failed to delete debt: ${response.body}');
     }
@@ -151,7 +255,10 @@ class ApiService {
   // --- Reports ---
 
   Future<Map<String, dynamic>> getReports(String timeframe) async {
-    final response = await http.get(Uri.parse('$_url/api/reports?timeframe=$timeframe'));
+    final response = await http.get(
+      Uri.parse('$_url/api/reports?timeframe=$timeframe'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {

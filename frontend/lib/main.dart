@@ -5,6 +5,7 @@ import 'pages/dashboard_page.dart';
 import 'pages/debt_page.dart';
 import 'pages/reports_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/auth_page.dart';
 
 void main() {
   runApp(
@@ -20,6 +21,7 @@ class ExpenseDebtTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final apiConfig = Provider.of<ApiConfig>(context);
     return MaterialApp(
       title: 'Expense & Debt Tracker',
       debugShowCheckedModeBanner: false,
@@ -43,7 +45,7 @@ class ExpenseDebtTrackerApp extends StatelessWidget {
           backgroundColor: Color(0xFF1E1E2E),
         ),
       ),
-      home: const MainNavigationShell(),
+      home: apiConfig.isLoggedIn ? const MainNavigationShell() : const AuthPage(),
     );
   }
 }
@@ -107,85 +109,117 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         ],
       ),
       drawer: Drawer(
-        child: Column(
-          children: [
-            // Drawer Header with styled branding
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1E1E2E), Color(0xFF0F0F1A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.cyan.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet,
-                        size: 44,
-                        color: Colors.cyanAccent,
-                      ),
+        child: Consumer<ApiConfig>(
+          builder: (context, apiConfig, child) {
+            return Column(
+              children: [
+                // Drawer Header with user info
+                DrawerHeader(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF1E1E2E), Color(0xFF0F0F1A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'EXPENSE & DEBT',
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                        color: Colors.white,
-                      ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.cyan.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.account_circle_outlined,
+                            size: 38,
+                            color: Colors.cyanAccent,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          apiConfig.email ?? 'Active Session',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          apiConfig.mobileNumber ?? '',
+                          style: TextStyle(
+                            fontSize: 11.0,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            
-            // Drawer Navigation Links
-            _buildDrawerTile(
-              index: 0,
-              icon: Icons.dashboard_outlined,
-              selectedIcon: Icons.dashboard,
-              label: 'Main Dashboard',
-            ),
-            _buildDrawerTile(
-              index: 1,
-              icon: Icons.people_outline,
-              selectedIcon: Icons.people,
-              label: 'Debt Page',
-            ),
-            _buildDrawerTile(
-              index: 3, // Group reports near debts
-              icon: Icons.bar_chart_outlined,
-              selectedIcon: Icons.bar_chart,
-              label: 'Reports Page',
-            ),
-            _buildDrawerTile(
-              index: 2, // Settings last
-              icon: Icons.settings_outlined,
-              selectedIcon: Icons.settings,
-              label: 'Settings Page',
-            ),
+                
+                // Drawer Navigation Links
+                _buildDrawerTile(
+                  index: 0,
+                  icon: Icons.dashboard_outlined,
+                  selectedIcon: Icons.dashboard,
+                  label: 'Main Dashboard',
+                ),
+                _buildDrawerTile(
+                  index: 1,
+                  icon: Icons.people_outline,
+                  selectedIcon: Icons.people,
+                  label: 'Debt Page',
+                ),
+                _buildDrawerTile(
+                  index: 3, // Group reports near debts
+                  icon: Icons.bar_chart_outlined,
+                  selectedIcon: Icons.bar_chart,
+                  label: 'Reports Page',
+                ),
+                _buildDrawerTile(
+                  index: 2, // Settings last
+                  icon: Icons.settings_outlined,
+                  selectedIcon: Icons.settings,
+                  label: 'Settings Page',
+                ),
 
-            const Spacer(),
-            
-            // Footer details in drawer
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'v1.0.0 • Supabase Connected',
-                style: TextStyle(color: Colors.grey[600], fontSize: 11),
-              ),
-            ),
-          ],
+                const Divider(color: Colors.cyan, thickness: 0.2, indent: 16, endIndent: 16),
+                
+                // Logout Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                    leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                    title: const Text(
+                      'Logout Account',
+                      style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context); // close drawer first
+                      apiConfig.clearSession();
+                    },
+                  ),
+                ),
+
+                const Spacer(),
+                
+                // Footer details in drawer
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'v1.0.0 • Supabase Connected',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
       body: _pages[_selectedPageIndex],

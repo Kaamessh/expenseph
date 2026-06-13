@@ -1,10 +1,11 @@
 import os
 import uuid
 import calendar
-from datetime import datetime, timezone
-from fastapi import FastAPI, HTTPException, Query
+import hashlib
+from datetime import datetime, timezone, timedelta
+from fastapi import FastAPI, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -15,7 +16,7 @@ load_dotenv()
 app = FastAPI(
     title="Expense & Debt Tracker API",
     description="Backend API serving the Expense & Debt Tracker app, connected to Supabase.",
-    version="1.0.0"
+    version="1.1.0"
 )
 
 # Enable CORS for Flutter Client access
@@ -45,11 +46,29 @@ else:
     print("Supabase credentials missing from environment variables. Running in Mock Mode.")
     is_mock_mode = True
 
+
+# --- SECURE HASHING UTILITY ---
+def hash_password(password: str) -> str:
+    """Computes a SHA-256 hash of the password with a static salt."""
+    salt = "expense_debt_tracker_salt_string"
+    return hashlib.sha256((password + salt).encode()).hexdigest()
+
+
 # --- IN-MEMORY MOCK DATA STORE ---
 # Used if Supabase credentials are not supplied.
+mock_users = [
+    {
+        "id": "11111111-1111-1111-1111-111111111111",
+        "email": "test@demo.com",
+        "mobile_number": "1234567890",
+        "password_hash": hash_password("password123")
+    }
+]
+
 mock_transactions = [
     {
         "id": "e81f185b-fc13-4f01-bb1c-4395df3d01cb",
+        "user_id": "11111111-1111-1111-1111-111111111111",
         "type": "gain",
         "amount": 5000.0,
         "description": "Monthly Salary payout",
@@ -57,36 +76,36 @@ mock_transactions = [
     },
     {
         "id": "f5b61e2a-19c2-402a-bf31-01f654bda309",
+        "user_id": "11111111-1111-1111-1111-111111111111",
         "type": "spend",
         "amount": 1200.0,
         "description": "Appartment Rental payment",
         "timestamp": (datetime.now(timezone.utc).replace(day=2)).isoformat()
-    },
-    {
-        "id": "a90b1c2d-34e5-4f6g-7h8i-9j0k1l2m3n4o",
-        "type": "spend",
-        "amount": 150.0,
-        "description": "Weekly grocery list",
-        "timestamp": (datetime.now(timezone.utc).replace(day=5)).isoformat()
     }
 ]
 
 mock_debts = [
     {
         "id": "3b2c1d0a-9876-5432-10fe-fedcba987654",
+        "user_id": "11111111-1111-1111-1111-111111111111",
         "person_name": "John Doe",
         "original_amount": 1000.0,
-        "interest_rate": 8.5,  # 8.5% annual simple interest
-        "created_at": (datetime.now(timezone.utc) - timedelta(days=45)).isoformat() if 'timedelta' in globals() else (datetime.now(timezone.utc)).isoformat()
+        "interest_rate": 8.5,
+        "created_at": (datetime.now(timezone.utc) - timedelta(days=45)).isoformat()
     }
 ]
 
-# Quick correction for datetime imports in mock values
-from datetime import timedelta
-mock_debts[0]["created_at"] = (datetime.now(timezone.utc) - timedelta(days=45)).isoformat()
-
 
 # --- PYDANTIC SCHEMAS ---
+class UserRegister(BaseModel):
+    email: EmailStr = Field(..., description="Unique email address")
+    mobile_number: str = Field(..., description="Unique mobile phone number")
+    password: str = Field(..., min_length=6, description="Password (min 6 characters)")
+
+class UserLogin(BaseModel):
+    username: str = Field(..., description="Email ID or Mobile Number")
+    password: str = Field(..., description="User password")
+
 class TransactionCreate(BaseModel):
     type: str = Field(..., description="Must be 'gain' or 'spend'")
     amount: float = Field(..., description="Numeric transaction amount")
@@ -147,23 +166,130 @@ def get_health():
         "datetime": datetime.now(timezone.utc).isoformat()
     }
 
-# --- TRANSACTIONS ENDPOINTS ---
 
-@app.get("/api/transactions")
-def get_transactions():
+# --- USER AUTHENTICATION ENDPOINTS ---
+
+@app.post("/api/auth/register")
+def register_user(user: UserRegister):
+    email = user.email.lower().strip()
+    mobile = user.mobile_number.strip()
+    pass_hash = hash_password(user.password)
+
     if not is_mock_mode:
         try:
-            res = supabase_client.table("transactions").select("*").order("timestamp", desc=True).execute()
+            # Check if email exists
+            chk_email = supabase_client.table("users").select("id").eq("email", email).execute()
+            if chk_email.data:
+                raise HTTPException(status_code=400, detail="Email address already registered")
+                
+            # Check if mobile exists
+            chk_mobile = supabase_client.table("users").select("id").eq("mobile_number", mobile).execute()
+            if chk_mobile.data:
+                raise HTTPException(status_code=400, detail="Mobile number already registered")
+
+            payload = {
+                "email": email,
+                "mobile_number": mobile,
+                "password_hash": pass_hash
+            }
+            res = supabase_client.table("users").insert(payload).execute()
+            new_user = res.data[0]
+            return {
+                "user_id": new_user["id"],
+                "email": new_user["email"],
+                "mobile_number": new_user["mobile_number"]
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Registration error: {str(e)}")
+    else:
+        # Check mock store
+        for u in mock_users:
+            if u["email"] == email:
+                raise HTTPException(status_code=400, detail="Email address already registered")
+            if u["mobile_number"] == mobile:
+                raise HTTPException(status_code=400, detail="Mobile number already registered")
+
+        new_user = {
+            "id": str(uuid.uuid4()),
+            "email": email,
+            "mobile_number": mobile,
+            "password_hash": pass_hash
+        }
+        mock_users.append(new_user)
+        return {
+            "user_id": new_user["id"],
+            "email": new_user["email"],
+            "mobile_number": new_user["mobile_number"]
+        }
+
+
+@app.post("/api/auth/login")
+def login_user(cred: UserLogin):
+    username = cred.username.lower().strip()
+    pass_hash = hash_password(cred.password)
+
+    if not is_mock_mode:
+        try:
+            # Query by email OR mobile_number
+            res = supabase_client.table("users").select("*").or_(f"email.eq.{username},mobile_number.eq.{username}").execute()
+            if not res.data:
+                raise HTTPException(status_code=401, detail="Invalid username (email/mobile) or password")
+            
+            user = res.data[0]
+            if user["password_hash"] != pass_hash:
+                raise HTTPException(status_code=401, detail="Invalid username (email/mobile) or password")
+
+            return {
+                "user_id": user["id"],
+                "email": user["email"],
+                "mobile_number": user["mobile_number"]
+            }
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Login error: {str(e)}")
+    else:
+        # Check mock store
+        for u in mock_users:
+            if u["email"] == username or u["mobile_number"] == username:
+                if u["password_hash"] == pass_hash:
+                    return {
+                        "user_id": u["id"],
+                        "email": u["email"],
+                        "mobile_number": u["mobile_number"]
+                    }
+        raise HTTPException(status_code=401, detail="Invalid username (email/mobile) or password")
+
+
+# --- USER DATA FILTER HELPER ---
+def get_user_id(x_user_id: Optional[str] = Header(None)) -> str:
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="Authentication credentials missing (X-User-Id)")
+    return x_user_id
+
+
+# --- TRANSACTIONS ENDPOINTS (SCOPED) ---
+
+@app.get("/api/transactions")
+def get_transactions(x_user_id: str = Header(...)):
+    user_id = get_user_id(x_user_id)
+    if not is_mock_mode:
+        try:
+            res = supabase_client.table("transactions").select("*").eq("user_id", user_id).order("timestamp", desc=True).execute()
             return res.data
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     else:
-        # Sort mock list descending by timestamp
-        sorted_txs = sorted(mock_transactions, key=lambda x: x["timestamp"], reverse=True)
+        # Sort and filter mock list
+        user_txs = [t for t in mock_transactions if t.get("user_id") == user_id]
+        sorted_txs = sorted(user_txs, key=lambda x: x["timestamp"], reverse=True)
         return sorted_txs
 
 @app.post("/api/transactions")
-def create_transaction(tx: TransactionCreate):
+def create_transaction(tx: TransactionCreate, x_user_id: str = Header(...)):
+    user_id = get_user_id(x_user_id)
     if tx.type not in ["gain", "spend"]:
         raise HTTPException(status_code=400, detail="Transaction type must be 'gain' or 'spend'")
     if tx.amount < 0:
@@ -172,6 +298,7 @@ def create_transaction(tx: TransactionCreate):
     ts = tx.timestamp if tx.timestamp else datetime.now(timezone.utc)
     
     payload = {
+        "user_id": user_id,
         "type": tx.type,
         "amount": tx.amount,
         "description": tx.description,
@@ -193,35 +320,43 @@ def create_transaction(tx: TransactionCreate):
         return new_tx
 
 @app.delete("/api/transactions/{tx_id}")
-def delete_transaction(tx_id: str):
+def delete_transaction(tx_id: str, x_user_id: str = Header(...)):
+    user_id = get_user_id(x_user_id)
     if not is_mock_mode:
         try:
-            res = supabase_client.table("transactions").delete().eq("id", tx_id).execute()
-            if not res.data:
+            # Check owner
+            chk = supabase_client.table("transactions").select("user_id").eq("id", tx_id).execute()
+            if not chk.data or chk.data[0]["user_id"] != user_id:
                 raise HTTPException(status_code=404, detail="Transaction not found")
+                
+            res = supabase_client.table("transactions").delete().eq("id", tx_id).execute()
             return {"status": "deleted", "id": tx_id}
+        except HTTPException as he:
+            raise he
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Database delete error: {str(e)}")
     else:
         global mock_transactions
         initial_len = len(mock_transactions)
-        mock_transactions = [t for t in mock_transactions if t["id"] != tx_id]
+        mock_transactions = [t for t in mock_transactions if not (t["id"] == tx_id and t.get("user_id") == user_id)]
         if len(mock_transactions) == initial_len:
             raise HTTPException(status_code=404, detail="Transaction not found")
         return {"status": "deleted", "id": tx_id}
 
-# --- DEBTS ENDPOINTS ---
+
+# --- DEBTS ENDPOINTS (SCOPED) ---
 
 @app.get("/api/debts")
-def get_debts():
+def get_debts(x_user_id: str = Header(...)):
+    user_id = get_user_id(x_user_id)
     if not is_mock_mode:
         try:
-            res = supabase_client.table("debts").select("*").execute()
+            res = supabase_client.table("debts").select("*").eq("user_id", user_id).execute()
             debts_list = res.data
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Database fetch error: {str(e)}")
     else:
-        debts_list = mock_debts
+        debts_list = [d for d in mock_debts if d.get("user_id") == user_id]
         
     # Append computed accrued interest and total debt fields
     enriched_debts = []
@@ -237,7 +372,8 @@ def get_debts():
     return enriched_debts
 
 @app.post("/api/debts")
-def create_debt(debt: DebtCreate):
+def create_debt(debt: DebtCreate, x_user_id: str = Header(...)):
+    user_id = get_user_id(x_user_id)
     if debt.original_amount < 0:
         raise HTTPException(status_code=400, detail="Original amount cannot be negative")
     if debt.interest_rate < 0:
@@ -246,6 +382,7 @@ def create_debt(debt: DebtCreate):
     created = debt.created_at if debt.created_at else datetime.now(timezone.utc)
     
     payload = {
+        "user_id": user_id,
         "person_name": debt.person_name,
         "original_amount": debt.original_amount,
         "interest_rate": debt.interest_rate,
@@ -278,7 +415,8 @@ def create_debt(debt: DebtCreate):
         }
 
 @app.put("/api/debts/{debt_id}")
-def update_debt(debt_id: str, updates: DebtUpdate):
+def update_debt(debt_id: str, updates: DebtUpdate, x_user_id: str = Header(...)):
+    user_id = get_user_id(x_user_id)
     payload = {}
     if updates.person_name is not None:
         payload["person_name"] = updates.person_name
@@ -298,9 +436,12 @@ def update_debt(debt_id: str, updates: DebtUpdate):
         
     if not is_mock_mode:
         try:
-            res = supabase_client.table("debts").update(payload).eq("id", debt_id).execute()
-            if not res.data:
+            # Check owner
+            chk = supabase_client.table("debts").select("user_id").eq("id", debt_id).execute()
+            if not chk.data or chk.data[0]["user_id"] != user_id:
                 raise HTTPException(status_code=404, detail="Debt profile not found")
+
+            res = supabase_client.table("debts").update(payload).eq("id", debt_id).execute()
             d = res.data[0]
             accrued = calculate_debt_interest(d)
             return {
@@ -308,11 +449,13 @@ def update_debt(debt_id: str, updates: DebtUpdate):
                 "accrued_interest": accrued,
                 "total_debt": round(float(d.get("original_amount", 0)) + accrued, 2)
             }
+        except HTTPException as he:
+            raise he
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Database update error: {str(e)}")
     else:
         for idx, d in enumerate(mock_debts):
-            if d["id"] == debt_id:
+            if d["id"] == debt_id and d.get("user_id") == user_id:
                 for k, v in payload.items():
                     mock_debts[idx][k] = v
                 updated = mock_debts[idx]
@@ -325,41 +468,48 @@ def update_debt(debt_id: str, updates: DebtUpdate):
         raise HTTPException(status_code=404, detail="Debt profile not found")
 
 @app.delete("/api/debts/{debt_id}")
-def delete_debt(debt_id: str):
+def delete_debt(debt_id: str, x_user_id: str = Header(...)):
+    user_id = get_user_id(x_user_id)
     if not is_mock_mode:
         try:
-            res = supabase_client.table("debts").delete().eq("id", debt_id).execute()
-            if not res.data:
+            # Check owner
+            chk = supabase_client.table("debts").select("user_id").eq("id", debt_id).execute()
+            if not chk.data or chk.data[0]["user_id"] != user_id:
                 raise HTTPException(status_code=404, detail="Debt profile not found")
+
+            res = supabase_client.table("debts").delete().eq("id", debt_id).execute()
             return {"status": "deleted", "id": debt_id}
+        except HTTPException as he:
+            raise he
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Database delete error: {str(e)}")
     else:
         global mock_debts
         initial_len = len(mock_debts)
-        mock_debts = [d for d in mock_debts if d["id"] != debt_id]
+        mock_debts = [d for d in mock_debts if not (d["id"] == debt_id and d.get("user_id") == user_id)]
         if len(mock_debts) == initial_len:
             raise HTTPException(status_code=404, detail="Debt profile not found")
         return {"status": "deleted", "id": debt_id}
 
 
-# --- ADVANCED REPORTS MODULE ENDPOINT ---
+# --- ADVANCED REPORTS ENDPOINT (SCOPED) ---
 
 @app.get("/api/reports")
-def get_reports(timeframe: str = Query("monthly", description="Must be 'monthly' or 'yearly'")):
+def get_reports(timeframe: str = Query("monthly", description="Must be 'monthly' or 'yearly'"), x_user_id: str = Header(...)):
+    user_id = get_user_id(x_user_id)
     if timeframe not in ["monthly", "yearly"]:
         raise HTTPException(status_code=400, detail="Timeframe must be 'monthly' or 'yearly'")
         
     # 1. Fetch transactions & debts
     if not is_mock_mode:
         try:
-            txs = supabase_client.table("transactions").select("*").execute().data
-            debts_list = supabase_client.table("debts").select("*").execute().data
+            txs = supabase_client.table("transactions").select("*").eq("user_id", user_id).execute().data
+            debts_list = supabase_client.table("debts").select("*").eq("user_id", user_id).execute().data
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Database error during reports: {str(e)}")
     else:
-        txs = mock_transactions
-        debts_list = mock_debts
+        txs = [t for t in mock_transactions if t.get("user_id") == user_id]
+        debts_list = [d for d in mock_debts if d.get("user_id") == user_id]
         
     now = datetime.now(timezone.utc)
     
@@ -381,9 +531,7 @@ def get_reports(timeframe: str = Query("monthly", description="Must be 'monthly'
     
     # Helper to initialize chart buckets
     if timeframe == "monthly":
-        # Initialize last 12 months in descending order, then reverse for display
         for i in range(12):
-            # Calculate year and month offset
             y_offset = (now.month - 1 - i) // 12
             m_offset = (now.month - 1 - i) % 12 + 1
             year = now.year + y_offset
@@ -398,7 +546,6 @@ def get_reports(timeframe: str = Query("monthly", description="Must be 'monthly'
                 "interest": 0.0
             }
     else:
-        # Initialize last 5 years
         for i in range(5):
             year = now.year - i
             key = str(year)
@@ -429,13 +576,11 @@ def get_reports(timeframe: str = Query("monthly", description="Must be 'monthly'
                 
     # Populating Debt Interest into Buckets using dynamic allocation
     if timeframe == "monthly":
-        # Calculate monthly distribution of interest
         interest_dist = get_monthly_interest_distribution(debts_list, now)
         for k, val in interest_dist.items():
             if k in chart_data:
                 chart_data[k]["interest"] = round(val, 2)
     else:
-        # Calculate yearly distribution of interest
         interest_dist = get_yearly_interest_distribution(debts_list, now)
         for k, val in interest_dist.items():
             if k in chart_data:
@@ -466,10 +611,8 @@ def get_monthly_interest_distribution(debts_list, now: datetime) -> dict:
             
         daily_rate = original_amount * (interest_rate / 100.0) / 365.0
         
-        # Start iterating month-by-month from creation date
         curr = datetime(created_at.year, created_at.month, 1, tzinfo=timezone.utc)
         while curr <= now:
-            # Overlap segment
             start_date = max(created_at, curr)
             _, last_day = calendar.monthrange(curr.year, curr.month)
             end_of_month = datetime(curr.year, curr.month, last_day, 23, 59, 59, tzinfo=timezone.utc)
@@ -481,7 +624,6 @@ def get_monthly_interest_distribution(debts_list, now: datetime) -> dict:
                 key = f"{curr.year}-{curr.month:02d}"
                 distribution[key] = distribution.get(key, 0.0) + interest
                 
-            # Advance to next month
             if curr.month == 12:
                 curr = datetime(curr.year + 1, 1, 1, tzinfo=timezone.utc)
             else:
@@ -517,6 +659,7 @@ def get_yearly_interest_distribution(debts_list, now: datetime) -> dict:
             curr = datetime(curr.year + 1, 1, 1, tzinfo=timezone.utc)
             
     return distribution
+
 
 # Serve static files if the directory exists
 try:
