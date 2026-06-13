@@ -1,0 +1,228 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'services/api_service.dart';
+import 'pages/dashboard_page.dart';
+import 'pages/debt_page.dart';
+import 'pages/reports_page.dart';
+import 'pages/settings_page.dart';
+
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ApiConfig(),
+      child: const ExpenseDebtTrackerApp(),
+    ),
+  );
+}
+
+class ExpenseDebtTrackerApp extends StatelessWidget {
+  const ExpenseDebtTrackerApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Expense & Debt Tracker',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        primaryColor: Colors.cyan,
+        colorScheme: const ColorScheme.dark(
+          primary: Colors.cyan,
+          secondary: Colors.cyanAccent,
+          background: Color(0xFF121218),
+          surface: Color(0xFF1E1E2E),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF121218),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E2E),
+          elevation: 0,
+          foregroundColor: Colors.white,
+        ),
+        drawerTheme: const DrawerThemeData(
+          backgroundColor: Color(0xFF1E1E2E),
+        ),
+      ),
+      home: const MainNavigationShell(),
+    );
+  }
+}
+
+class MainNavigationShell extends StatefulWidget {
+  const MainNavigationShell({super.key});
+
+  @override
+  State<MainNavigationShell> createState() => _MainNavigationShellState();
+}
+
+class _MainNavigationShellState extends State<MainNavigationShell> {
+  int _selectedPageIndex = 0;
+
+  // List of page widgets
+  final List<Widget> _pages = const [
+    DashboardPage(),
+    DebtPage(),
+    SettingsPage(),
+    ReportsPage(),
+  ];
+
+  // List of page titles matching drawer links
+  final List<String> _pageTitles = const [
+    'Transaction Dashboard',
+    'Debt Management',
+    'Application Settings',
+    'Advanced Reports',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          _pageTitles[_selectedPageIndex],
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {
+              // Quick helper alert about the mode
+              final config = Provider.of<ApiConfig>(context, listen: false);
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('API Connection Status'),
+                  content: Text('Your application is pointing to:\n\n${config.baseUrl}\n\nVerify this URL matches your backend environment in the Settings page.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('OK'),
+                    )
+                  ],
+                ),
+              );
+            },
+            icon: const Icon(Icons.info_outline, color: Colors.grey),
+          )
+        ],
+      ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            // Drawer Header with styled branding
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1E1E2E), Color(0xFF0F0F1A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.cyan.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet,
+                        size: 44,
+                        color: Colors.cyanAccent,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'EXPENSE & DEBT',
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Drawer Navigation Links
+            _buildDrawerTile(
+              index: 0,
+              icon: Icons.dashboard_outlined,
+              selectedIcon: Icons.dashboard,
+              label: 'Main Dashboard',
+            ),
+            _buildDrawerTile(
+              index: 1,
+              icon: Icons.people_outline,
+              selectedIcon: Icons.people,
+              label: 'Debt Page',
+            ),
+            _buildDrawerTile(
+              index: 3, // Group reports near debts
+              icon: Icons.bar_chart_outlined,
+              selectedIcon: Icons.bar_chart,
+              label: 'Reports Page',
+            ),
+            _buildDrawerTile(
+              index: 2, // Settings last
+              icon: Icons.settings_outlined,
+              selectedIcon: Icons.settings,
+              label: 'Settings Page',
+            ),
+
+            const Spacer(),
+            
+            // Footer details in drawer
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'v1.0.0 • Supabase Connected',
+                style: TextStyle(color: Colors.grey[600], fontSize: 11),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: _pages[_selectedPageIndex],
+    );
+  }
+
+  Widget _buildDrawerTile({
+    required int index,
+    required IconData icon,
+    required IconData selectedIcon,
+    required String label,
+  }) {
+    final isSelected = _selectedPageIndex == index;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+      child: ListTile(
+        selected: isSelected,
+        selectedTileColor: Colors.cyan.withOpacity(0.08),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+        leading: Icon(
+          isSelected ? selectedIcon : icon,
+          color: isSelected ? Colors.cyanAccent : Colors.grey,
+        ),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[400],
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        onTap: () {
+          setState(() {
+            _selectedPageIndex = index;
+          });
+          Navigator.pop(context); // Close Drawer
+        },
+      ),
+    );
+  }
+}
