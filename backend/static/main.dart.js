@@ -44141,7 +44141,7 @@ s=b.d
 if(s==null)s=""
 r=t.p
 q=this.a
-return A.bK(A.b([new A.LZ(B.DT,A.dU(A.bK(A.b([o,B.hn,n,B.jp,A.az(s,p,p,p,A.c4(p,p,B.bA,p,p,p,p,p,p,p,p,11,p,p,p,p,p,!0,p,p,p,p,p,p,p,p),p,p,p)],r),B.D,B.dO,B.q,0,B.F),p,p),p),q.ul(B.q5,4,"My Profile",B.q4),q.ul(B.Jw,0,"Main Dashboard",B.J7),q.ul(B.Jk,1,"Debt Page",B.Jj),q.ul(B.Ju,3,"Reports Page",B.J4),q.ul(B.q8,2,"Settings Page",B.Jo),B.HS,new A.aG(B.pq,A.a99(!1,p,p,p,!0,p,p,!0,p,B.JX,p,p,p,p,new A.arK(a,b),!1,p,p,new A.bC(A.bg(10),B.m),p,p,p,B.ZY,p,p,p),p),B.BM,new A.aG(B.bu,A.az("v1.2.0 \u2022 Supabase Connected",p,p,p,A.c4(p,p,B.du,p,p,p,p,p,p,p,p,11,p,p,p,p,p,!0,p,p,p,p,p,p,p,p),p,p,p),p)],r),B.D,B.o,B.q,0,B.F)},
+return A.bK(A.b([new A.LZ(B.DT,A.dU(A.bK(A.b([o,B.hn,n,B.jp,A.az(s,p,p,p,A.c4(p,p,B.bA,p,p,p,p,p,p,p,p,11,p,p,p,p,p,!0,p,p,p,p,p,p,p,p),p,p,p)],r),B.D,B.dO,B.q,0,B.F),p,p),p),q.ul(B.q5,4,"My Profile",B.q4),q.ul(B.Jw,0,"Main Dashboard",B.J7),q.ul(B.Jk,1,"Debt Page",B.Jj),q.ul(B.Ju,3,"Reports Page",B.J4),q.ul(B.q8,2,"Settings Page",B.Jo),B.HS,new A.aG(B.pq,A.a99(!1,p,p,p,!0,p,p,!0,p,B.JX,p,p,p,p,new A.arK(a,b),!1,p,p,new A.bC(A.bg(10),B.m),p,p,p,B.ZY,p,p,p),p),B.BM,new A.aG(B.bu,A.az("v1.3.0 \u2022 Supabase Connected",p,p,p,A.c4(p,p,B.du,p,p,p,p,p,p,p,p,11,p,p,p,p,p,!0,p,p,p,p,p,p,p,p),p,p,p),p)],r),B.D,B.o,B.q,0,B.F)},
 $S:247}
 A.arK.prototype={
 $0(){A.ew(this.a,!1).i1(null)
