@@ -55,6 +55,7 @@ jobs:
           rm -rf backend/static
           mkdir -p backend/static
           cp -r frontend/build/web/* backend/static/
+          cp frontend/build/app/outputs/flutter-apk/app-release.apk backend/static/
 
       - name: Commit and Push static assets
         run: |

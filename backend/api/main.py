@@ -167,6 +167,14 @@ def get_health():
     }
 
 
+@app.get("/api/version")
+def get_version():
+    return {
+        "version": "1.1.0",
+        "apk_url": "https://expenseph.vercel.app/app-release.apk"
+    }
+
+
 # --- USER AUTHENTICATION ENDPOINTS ---
 
 @app.post("/api/auth/register")

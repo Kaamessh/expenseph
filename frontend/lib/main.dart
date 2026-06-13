@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'services/api_service.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/debt_page.dart';
@@ -59,6 +63,100 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedPageIndex = 0;
+  static const String appVersion = "1.0.0"; // Local version of the app
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      // Check for updates on mobile devices after a short delay
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForUpdates();
+      });
+    }
+  }
+
+  Future<void> _checkForUpdates() async {
+    try {
+      final config = Provider.of<ApiConfig>(context, listen: false);
+      final response = await http.get(Uri.parse('${config.baseUrl}/api/version'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final latestVersion = data['version'] as String;
+        final apkUrl = data['apk_url'] as String;
+
+        if (_isNewerVersion(latestVersion, appVersion)) {
+          _showUpdateDialog(latestVersion, apkUrl);
+        }
+      }
+    } catch (_) {
+      // Silently ignore update check errors to avoid disrupting user
+    }
+  }
+
+  bool _isNewerVersion(String latest, String current) {
+    List<int> latestParts = latest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    List<int> currentParts = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+    for (int i = 0; i < 3; i++) {
+      int latestVal = i < latestParts.length ? latestParts[i] : 0;
+      int currentVal = i < currentParts.length ? currentParts[i] : 0;
+      if (latestVal > currentVal) return true;
+      if (latestVal < currentVal) return false;
+    }
+    return false;
+  }
+
+  void _showUpdateDialog(String version, String apkUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Force them to choose
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: const Color(0xFF1E1E2E),
+        title: Row(
+          children: [
+            const Icon(Icons.system_update_rounded, color: Colors.cyanAccent),
+            const SizedBox(width: 10),
+            const Text(
+              'Update Available!',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
+        ),
+        content: Text(
+          'A new version of the app is available (v$version).\n\nWould you like to download and install the latest update now?',
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'LATER',
+              style: TextStyle(color: Colors.grey[400]),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final url = Uri.parse(apkUrl);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.cyan,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('UPDATE NOW', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   // List of page widgets
   final List<Widget> _pages = const [
