@@ -1,0 +1,53 @@
+name: Deploy Web UI to Vercel
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'backend/static/**'
+      - '.github/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          flutter pub get
+
+      - name: Build Web Application
+        run: |
+          cd frontend
+          flutter build web --release --base-href "/"
+
+      - name: Copy build to backend static folder
+        run: |
+          rm -rf backend/static
+          mkdir -p backend/static
+          cp -r frontend/build/web/* backend/static/
+
+      - name: Commit and Push static assets
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/static
+          # Only commit and push if there are changes
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "chore: compile and deploy flutter web assets [skip ci]"
+            git push origin main
+          else
+            echo "No changes in compiled assets."
+          fi
