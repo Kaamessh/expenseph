@@ -30,6 +30,7 @@ jobs:
       - name: Build Web Application
         run: |
           cd frontend
+          flutter create . --platforms web
           flutter build web --release --base-href "/"
 
       - name: Copy build to backend static folder
