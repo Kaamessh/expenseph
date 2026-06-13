@@ -10,6 +10,7 @@ import 'pages/debt_page.dart';
 import 'pages/reports_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/auth_page.dart';
+import 'pages/profile_page.dart';
 
 void main() {
   runApp(
@@ -63,7 +64,7 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedPageIndex = 0;
-  static const String appVersion = "1.1.0"; // Local version of the app
+  static const String appVersion = "1.2.0"; // Local version of the app
 
   @override
   void initState() {
@@ -164,6 +165,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     DebtPage(),
     SettingsPage(),
     ReportsPage(),
+    ProfilePage(),
   ];
 
   // List of page titles matching drawer links
@@ -172,6 +174,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     'Debt Management',
     'Application Settings',
     'Advanced Reports',
+    'My User Profile',
   ];
 
   @override
@@ -261,30 +264,36 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 ),
                 
                 // Drawer Navigation Links
-                _buildDrawerTile(
-                  index: 0,
-                  icon: Icons.dashboard_outlined,
-                  selectedIcon: Icons.dashboard,
-                  label: 'Main Dashboard',
-                ),
-                _buildDrawerTile(
-                  index: 1,
-                  icon: Icons.people_outline,
-                  selectedIcon: Icons.people,
-                  label: 'Debt Page',
-                ),
-                _buildDrawerTile(
-                  index: 3, // Group reports near debts
-                  icon: Icons.bar_chart_outlined,
-                  selectedIcon: Icons.bar_chart,
-                  label: 'Reports Page',
-                ),
-                _buildDrawerTile(
-                  index: 2, // Settings last
-                  icon: Icons.settings_outlined,
-                  selectedIcon: Icons.settings,
-                  label: 'Settings Page',
-                ),
+                 _buildDrawerTile(
+                   index: 4,
+                   icon: Icons.person_outline,
+                   selectedIcon: Icons.person,
+                   label: 'My Profile',
+                 ),
+                 _buildDrawerTile(
+                   index: 0,
+                   icon: Icons.dashboard_outlined,
+                   selectedIcon: Icons.dashboard,
+                   label: 'Main Dashboard',
+                 ),
+                 _buildDrawerTile(
+                   index: 1,
+                   icon: Icons.people_outline,
+                   selectedIcon: Icons.people,
+                   label: 'Debt Page',
+                 ),
+                 _buildDrawerTile(
+                   index: 3, // Group reports near debts
+                   icon: Icons.bar_chart_outlined,
+                   selectedIcon: Icons.bar_chart,
+                   label: 'Reports Page',
+                 ),
+                 _buildDrawerTile(
+                   index: 2, // Settings last
+                   icon: Icons.settings_outlined,
+                   selectedIcon: Icons.settings,
+                   label: 'Settings Page',
+                 ),
 
                 const Divider(color: Colors.cyan, thickness: 0.2, indent: 16, endIndent: 16),
                 
@@ -311,7 +320,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    'v1.1.0 • Supabase Connected',
+                    'v1.2.0 • Supabase Connected',
                     style: TextStyle(color: Colors.grey[600], fontSize: 11),
                   ),
                 ),
