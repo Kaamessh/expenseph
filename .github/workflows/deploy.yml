@@ -36,7 +36,7 @@ jobs:
       - name: Build Web Application
         run: |
           cd frontend
-          flutter create . --platforms web
+          flutter create . --platforms android,web
           flutter build web --release --base-href "/"
 
       - name: Build Android APK
