@@ -138,8 +138,8 @@ def calculate_debt_interest(debt) -> float:
 
 # --- ROUTE HANDLERS ---
 
-@app.get("/")
-def get_root():
+@app.get("/api/health")
+def get_health():
     return {
         "status": "online",
         "mode": "supabase" if not is_mock_mode else "in-memory-mock",
