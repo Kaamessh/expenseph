@@ -6,7 +6,7 @@ import '../models/debt.dart';
 
 class ApiConfig extends ChangeNotifier {
   // Default URL: Vercel standard placeholder or local development API
-  String _baseUrl = 'http://127.0.0.1:8000';
+  String _baseUrl = 'https://expenseph.vercel.app';
   String? _userId;
   String? _email;
   String? _mobileNumber;

@@ -39,6 +39,10 @@ jobs:
           flutter create . --platforms android,web
           flutter build web --release --base-href "/"
 
+      - name: Patch AndroidManifest for Cleartext Traffic
+        run: |
+          python patch_manifest.py
+
       - name: Build Android APK
         run: |
           cd frontend
