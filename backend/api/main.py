@@ -517,3 +517,12 @@ def get_yearly_interest_distribution(debts_list, now: datetime) -> dict:
             curr = datetime(curr.year + 1, 1, 1, tzinfo=timezone.utc)
             
     return distribution
+
+# Serve static files if the directory exists
+try:
+    from fastapi.staticfiles import StaticFiles
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+    if os.path.exists(static_dir):
+        app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+except Exception as e:
+    print(f"Error mounting static files: {e}")

@@ -8,6 +8,16 @@ class ApiConfig extends ChangeNotifier {
   // Default URL: Vercel standard placeholder or local development API
   String _baseUrl = 'http://127.0.0.1:8000';
 
+  ApiConfig() {
+    if (kIsWeb) {
+      try {
+        _baseUrl = Uri.base.origin;
+      } catch (e) {
+        // fallback
+      }
+    }
+  }
+
   String get baseUrl => _baseUrl;
 
   void updateBaseUrl(String newUrl) {
