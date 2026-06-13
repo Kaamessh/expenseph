@@ -20,3 +20,4 @@ build/
 *.json
 !vercel.json
 !pubspec.json
+!backend/static/**
