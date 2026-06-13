@@ -19,7 +19,7 @@ class AppTransaction {
       type: json['type'] ?? 'spend',
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       description: json['description'] ?? '',
-      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIsoformatString()),
+      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
     );
   }
 

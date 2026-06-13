@@ -60,7 +60,7 @@ class _DashboardPageState extends State<DashboardPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.dark(
-              primary: _transactionType == 'gain' ? Colors.emerald : Colors.redAccent,
+              primary: _transactionType == 'gain' ? Colors.green : Colors.redAccent,
               onPrimary: Colors.white,
               surface: const Color(0xFF1E1E2E),
               onSurface: Colors.white,
@@ -85,7 +85,7 @@ class _DashboardPageState extends State<DashboardPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.dark(
-              primary: _transactionType == 'gain' ? Colors.emerald : Colors.redAccent,
+              primary: _transactionType == 'gain' ? Colors.green : Colors.redAccent,
               onPrimary: Colors.white,
               surface: const Color(0xFF1E1E2E),
               onSurface: Colors.white,
@@ -145,7 +145,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Transaction recorded successfully!'),
-          backgroundColor: Colors.emerald,
+          backgroundColor: Colors.green,
         ),
       );
       
@@ -200,7 +200,7 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: const Color(0xFF121218),
       body: RefreshIndicator(
         onRefresh: _fetchData,
-        color: Colors.emerald,
+        color: Colors.green,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16.0),

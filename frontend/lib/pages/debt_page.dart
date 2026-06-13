@@ -222,7 +222,7 @@ class _DebtPageState extends State<DebtPage> {
                                   id: existingDebt.id,
                                   personName: name,
                                   originalAmount: amount,
-                                  interest_rate: rate, // Map parameter
+                                  interestRate: rate,
                                   createdAt: selectedDate,
                                 );
                               } else {
@@ -235,11 +235,13 @@ class _DebtPageState extends State<DebtPage> {
                               }
                               _fetchDebts();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(isEditing ? 'Debt record updated' : 'New debt logged successfully'),
-                                  backgroundColor: Colors.amber,
-                                  foregroundColor: Colors.black,
-                                ),
+                                  SnackBar(
+                                    content: Text(
+                                      isEditing ? 'Debt record updated' : 'New debt logged successfully',
+                                      style: const TextStyle(color: Colors.black),
+                                    ),
+                                    backgroundColor: Colors.amber,
+                                  ),
                               );
                             } catch (e) {
                               setState(() {
