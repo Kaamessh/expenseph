@@ -296,7 +296,7 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedPageIndex = 0;
-  static const String appVersion = "2.0.0"; // Local version of the app
+  static const String appVersion = "3.0.0"; // Local version of the app
 
   // List of page widgets
   final List<Widget> _pages = const [
