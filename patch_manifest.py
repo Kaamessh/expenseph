@@ -37,10 +37,6 @@ def main():
         with open(gradle_path, 'r', encoding='utf-8') as file:
             gradle_content = file.read()
 
-        print("=== ORIGINAL GRADLE CONTENT ===")
-        print(gradle_content)
-        print("=== END ORIGINAL GRADLE CONTENT ===")
-
         updated = False
         if 'isCoreLibraryDesugaringEnabled' not in gradle_content:
             gradle_content = re.sub(
@@ -52,12 +48,16 @@ def main():
             updated = True
 
         if 'coreLibraryDesugaring' not in gradle_content:
-            gradle_content = re.sub(
-                r'(dependencies\s*\{)',
-                r'\1\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")',
-                gradle_content
-            )
-            print("Added coreLibraryDesugaring dependency to build.gradle.kts.")
+            if 'dependencies' in gradle_content:
+                gradle_content = re.sub(
+                    r'(dependencies\s*\{)',
+                    r'\1\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")',
+                    gradle_content
+                )
+                print("Added coreLibraryDesugaring to existing dependencies block.")
+            else:
+                gradle_content += '\n\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+                print("Appended new dependencies block with coreLibraryDesugaring dependency.")
             updated = True
 
         if updated:
