@@ -50,27 +50,21 @@ class ExpenseDebtTrackerApp extends StatelessWidget {
           backgroundColor: Color(0xFF1E1E2E),
         ),
       ),
-      home: !apiConfig.isInitialized
-          ? const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(color: Colors.cyanAccent),
-              ),
-            )
-          : (apiConfig.isLoggedIn ? const MainNavigationShell() : const AuthPage()),
+      home: const MainHomeWrapper(),
     );
   }
 }
 
-class MainNavigationShell extends StatefulWidget {
-  const MainNavigationShell({super.key});
+class MainHomeWrapper extends StatefulWidget {
+  const MainHomeWrapper({super.key});
 
   @override
-  State<MainNavigationShell> createState() => _MainNavigationShellState();
+  State<MainHomeWrapper> createState() => _MainHomeWrapperState();
 }
 
-class _MainNavigationShellState extends State<MainNavigationShell> {
-  int _selectedPageIndex = 0;
+class _MainHomeWrapperState extends State<MainHomeWrapper> {
   static const String appVersion = "1.9.0"; // Local version of the app
+  bool _checkedUpdate = false;
 
   @override
   void initState() {
@@ -84,6 +78,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   Future<void> _checkForUpdates() async {
+    if (_checkedUpdate) return;
     try {
       final config = Provider.of<ApiConfig>(context, listen: false);
       final response = await http.get(Uri.parse('${config.baseUrl}/api/version'));
@@ -93,6 +88,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         final apkUrl = data['apk_url'] as String;
 
         if (_isNewerVersion(latestVersion, appVersion)) {
+          _checkedUpdate = true;
           _showUpdateDialog(latestVersion, apkUrl);
         }
       }
@@ -164,6 +160,31 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final apiConfig = Provider.of<ApiConfig>(context);
+    if (!apiConfig.isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.cyanAccent),
+        ),
+      );
+    }
+    return apiConfig.isLoggedIn ? const MainNavigationShell() : const AuthPage();
+  }
+}
+
+class MainNavigationShell extends StatefulWidget {
+  const MainNavigationShell({super.key});
+
+  @override
+  State<MainNavigationShell> createState() => _MainNavigationShellState();
+}
+
+class _MainNavigationShellState extends State<MainNavigationShell> {
+  int _selectedPageIndex = 0;
+  static const String appVersion = "1.9.0"; // Local version of the app
 
   // List of page widgets
   final List<Widget> _pages = const [
