@@ -81,6 +81,22 @@ def main():
             print("build.gradle.kts patching completed.")
         else:
             print("build.gradle.kts already patched or no changes needed.")
+
+        # Create proguard-rules.pro to fix R8 OkHttp missing classes errors
+        proguard_path = 'frontend/android/app/proguard-rules.pro'
+        proguard_rules = """
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+"""
+        # Append to existing or create new
+        mode = 'a' if os.path.exists(proguard_path) else 'w'
+        with open(proguard_path, mode, encoding='utf-8') as pf:
+            pf.write(proguard_rules)
+        print("Created/Updated proguard-rules.pro with okhttp/bouncycastle rules.")
+
     else:
         print(f"Gradle file not found: {gradle_path}")
 
