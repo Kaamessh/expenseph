@@ -16,7 +16,7 @@ load_dotenv()
 app = FastAPI(
     title="Expense & Debt Tracker API",
     description="Backend API serving the Expense & Debt Tracker app, connected to Supabase.",
-    version="1.5.0"
+    version="1.6.0"
 )
 
 # Enable CORS for Flutter Client access
@@ -29,8 +29,9 @@ app.add_middleware(
 )
 
 # Supabase Credentials Configuration
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_URL_RAW = os.environ.get("SUPABASE_URL", "https://ldhzirrnzxxpeshudowb.supabase.co/rest/v1/")
+SUPABASE_URL = SUPABASE_URL_RAW.split("/rest/v1")[0].strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkaHppcnJuenh4cGVzaHVkb3diIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyMDMsImV4cCI6MjA5NjkzNDIwM30.NSGqfqvMduh-d9BKkPGYH2jDhaFfudMCQPZ4pgyZAQg").strip()
 
 supabase_client: Optional[Client] = None
 is_mock_mode = False
@@ -170,7 +171,7 @@ def get_health():
 @app.get("/api/version")
 def get_version():
     return {
-        "version": "1.5.0",
+        "version": "1.6.0",
         "apk_url": "https://expenseph.vercel.app/app-release.apk"
     }
 
