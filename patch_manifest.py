@@ -102,6 +102,20 @@ def main():
                         content = content.replace('jcenter()', 'mavenCentral()')
                         changed = True
                     
+                    if 'compileSdkVersion' in content:
+                        content = re.sub(r'compileSdkVersion\s+\d+', 'compileSdkVersion 34', content)
+                        changed = True
+                    elif 'compileSdk ' in content:
+                        content = re.sub(r'compileSdk\s+\d+', 'compileSdk 34', content)
+                        changed = True
+                    
+                    if 'targetSdkVersion' in content:
+                        content = re.sub(r'targetSdkVersion\s+\d+', 'targetSdkVersion 34', content)
+                        changed = True
+                    elif 'targetSdk ' in content:
+                        content = re.sub(r'targetSdk\s+\d+', 'targetSdk 34', content)
+                        changed = True
+                    
                     if 'namespace' not in content and 'android {' in content:
                         # Try to find AndroidManifest.xml to extract package name
                         manifest_path = os.path.join(root_dir, 'src', 'main', 'AndroidManifest.xml')
