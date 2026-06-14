@@ -27,6 +27,21 @@ def main():
             content = content.replace('<application', '<application\n        android:usesCleartextTraffic="true"')
         print("Enabled usesCleartextTraffic.")
 
+    # Add queries block for url_launcher package visibility support on Android 11+
+    queries_block = """    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>"""
+    if '<queries>' not in content:
+        content = content.replace('<application', f'{queries_block}\n    <application')
+        print("Added queries block for url_launcher support.")
+
     with open(manifest_path, 'w', encoding='utf-8') as file:
         file.write(content)
 

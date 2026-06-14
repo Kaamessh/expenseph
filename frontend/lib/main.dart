@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -145,10 +146,27 @@ class _MainHomeWrapperState extends State<MainHomeWrapper> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
               final url = Uri.parse(apkUrl);
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
+              Navigator.pop(context);
+              try {
+                bool launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+                if (!launched) {
+                  await Clipboard.setData(ClipboardData(text: apkUrl));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Update URL copied to clipboard! Paste it in your browser to download.'),
+                      duration: Duration(seconds: 5),
+                    ),
+                  );
+                }
+              } catch (_) {
+                await Clipboard.setData(ClipboardData(text: apkUrl));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Update URL copied to clipboard! Paste it in your browser to download.'),
+                    duration: Duration(seconds: 5),
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
