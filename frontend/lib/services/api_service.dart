@@ -218,6 +218,7 @@ class ApiService {
     required double amount,
     required String description,
     required DateTime timestamp,
+    required String category,
   }) async {
     final response = await http.post(
       Uri.parse('$_url/api/transactions'),
@@ -227,6 +228,7 @@ class ApiService {
         'amount': amount,
         'description': description,
         'timestamp': timestamp.toIso8601String(),
+        'category': category,
       }),
     );
 

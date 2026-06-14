@@ -21,6 +21,18 @@ class _DashboardPageState extends State<DashboardPage> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   
+  final List<String> _categories = [
+    'Food',
+    'Rent',
+    'Salary',
+    'Travel',
+    'Shopping',
+    'Utilities',
+    'Investment',
+    'Others',
+  ];
+  String _selectedCategory = 'Others';
+  
   List<AppTransaction> _transactions = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -133,6 +145,7 @@ class _DashboardPageState extends State<DashboardPage> {
         amount: amount,
         description: _descriptionController.text.trim(),
         timestamp: txDateTime,
+        category: _selectedCategory,
       );
 
       // Clean Form
@@ -141,6 +154,7 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() {
         _selectedDate = DateTime.now();
         _selectedTime = TimeOfDay.now();
+        _selectedCategory = 'Others';
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -376,6 +390,44 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         const SizedBox(height: 16.0),
                         
+                        // Category Dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedCategory,
+                          dropdownColor: const Color(0xFF1E1E2E),
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: AppTranslations.t(context, 'category'),
+                            labelStyle: const TextStyle(color: Colors.grey),
+                            prefixIcon: const Icon(Icons.category, color: Colors.grey),
+                            filled: true,
+                            fillColor: const Color(0xFF12121F),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide(
+                                color: _transactionType == 'gain' ? const Color(0xFF09BC8A) : const Color(0xFFE05D5D),
+                              ),
+                            ),
+                          ),
+                          items: _categories.map((cat) {
+                            return DropdownMenuItem<String>(
+                              value: cat,
+                              child: Text(AppTranslations.t(context, 'category_$cat')),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedCategory = val;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16.0),
+                        
                         // Date and Time selectors
                         Row(
                           children: [
@@ -559,7 +611,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       leading: CircleAvatar(
                                         backgroundColor: (isGain ? const Color(0xFF09BC8A) : const Color(0xFFE05D5D)).withOpacity(0.15),
                                         child: Icon(
-                                          isGain ? Icons.add : Icons.remove,
+                                          _getCategoryIcon(tx.category),
                                           color: isGain ? const Color(0xFF09BC8A) : const Color(0xFFE05D5D),
                                         ),
                                       ),
@@ -568,7 +620,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                         style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
                                       ),
                                       subtitle: Text(
-                                        DateFormat('MMM dd, yyyy - hh:mm a').format(tx.timestamp),
+                                        '${AppTranslations.t(context, 'category_${tx.category}')} • ${DateFormat('MMM dd, yyyy - hh:mm a').format(tx.timestamp)}',
                                         style: TextStyle(color: Colors.grey[500], fontSize: 12),
                                       ),
                                       trailing: Row(
@@ -676,5 +728,27 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Food':
+        return Icons.fastfood;
+      case 'Rent':
+        return Icons.home;
+      case 'Salary':
+        return Icons.monetization_on;
+      case 'Travel':
+        return Icons.directions_car;
+      case 'Shopping':
+        return Icons.shopping_bag;
+      case 'Utilities':
+        return Icons.electrical_services;
+      case 'Investment':
+        return Icons.trending_up;
+      case 'Others':
+      default:
+        return Icons.category;
+    }
   }
 }

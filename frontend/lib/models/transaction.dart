@@ -4,6 +4,7 @@ class AppTransaction {
   final double amount;
   final String description;
   final DateTime timestamp;
+  final String category;
 
   AppTransaction({
     required this.id,
@@ -11,6 +12,7 @@ class AppTransaction {
     required this.amount,
     required this.description,
     required this.timestamp,
+    required this.category,
   });
 
   factory AppTransaction.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class AppTransaction {
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       description: json['description'] ?? '',
       timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
+      category: json['category'] ?? 'General',
     );
   }
 
@@ -29,6 +32,7 @@ class AppTransaction {
       'amount': amount,
       'description': description,
       'timestamp': timestamp.toIso8601String(),
+      'category': category,
     };
   }
 }

@@ -16,7 +16,7 @@ load_dotenv()
 app = FastAPI(
     title="Expense & Debt Tracker API",
     description="Backend API serving the Expense & Debt Tracker app, connected to Supabase.",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 # Enable CORS for Flutter Client access
@@ -86,7 +86,8 @@ mock_transactions = [
         "type": "gain",
         "amount": 5000.0,
         "description": "Monthly Salary payout",
-        "timestamp": (datetime.now(timezone.utc).replace(day=1)).isoformat()
+        "timestamp": (datetime.now(timezone.utc).replace(day=1)).isoformat(),
+        "category": "Salary"
     },
     {
         "id": "f5b61e2a-19c2-402a-bf31-01f654bda309",
@@ -94,7 +95,8 @@ mock_transactions = [
         "type": "spend",
         "amount": 1200.0,
         "description": "Appartment Rental payment",
-        "timestamp": (datetime.now(timezone.utc).replace(day=2)).isoformat()
+        "timestamp": (datetime.now(timezone.utc).replace(day=2)).isoformat(),
+        "category": "Rent"
     }
 ]
 
@@ -126,6 +128,7 @@ class TransactionCreate(BaseModel):
     amount: float = Field(..., description="Numeric transaction amount")
     description: Optional[str] = Field(None, description="Optional description details")
     timestamp: Optional[datetime] = Field(None, description="Transaction timestamp. Defaults to now.")
+    category: Optional[str] = Field("General", description="Transaction category")
 
 class DebtCreate(BaseModel):
     person_name: str = Field(..., description="Name of the person you owe/who owes you")
@@ -190,7 +193,7 @@ def get_health():
 @app.get("/api/version")
 def get_version():
     return {
-        "version": "2.0.0",
+        "version": "3.0.0",
         "apk_url": "https://expenseph.vercel.app/app-release.apk"
     }
 
@@ -334,7 +337,8 @@ def create_transaction(tx: TransactionCreate, x_user_id: str = Header(...)):
         "type": tx.type,
         "amount": tx.amount,
         "description": tx.description,
-        "timestamp": ts.isoformat()
+        "timestamp": ts.isoformat(),
+        "category": tx.category or "General"
     }
     
     if not is_mock_mode:
@@ -553,15 +557,29 @@ def get_reports(timeframe: str = Query("monthly", description="Must be 'monthly'
     # Compute aggregates
     total_gain = 0.0
     total_spend = 0.0
+    category_spend = {}
+    category_gain = {}
     for t in txs:
         amount = float(t.get("amount", 0))
+        cat = t.get("category") or "Others"
         if t.get("type") == "gain":
             total_gain += amount
+            category_gain[cat] = category_gain.get(cat, 0.0) + amount
         elif t.get("type") == "spend":
             total_spend += amount
+            category_spend[cat] = category_spend.get(cat, 0.0) + amount
             
     # Calculate total accrued interest across all active debts
     total_interest = sum(calculate_debt_interest(d) for d in debts_list)
+    
+    # Calculate debt principals and interest liabilities
+    total_debt_principal = sum(float(d.get("original_amount", 0)) for d in debts_list)
+    total_monthly_interest_liability = sum(float(d.get("original_amount", 0)) * (float(d.get("interest_rate", 0)) / 100.0 / 12.0) for d in debts_list)
+    total_yearly_interest_liability = sum(float(d.get("original_amount", 0)) * (float(d.get("interest_rate", 0)) / 100.0) for d in debts_list)
+    
+    # round categories
+    category_spend = {k: round(v, 2) for k, v in category_spend.items()}
+    category_gain = {k: round(v, 2) for k, v in category_gain.items()}
     
     # 2. Distribute interest and transactions across timeframe buckets
     chart_data = {}
@@ -632,6 +650,12 @@ def get_reports(timeframe: str = Query("monthly", description="Must be 'monthly'
         "total_gain": round(total_gain, 2),
         "total_spend": round(total_spend, 2),
         "total_interest_accrued": round(total_interest, 2),
+        "total_debt_principal": round(total_debt_principal, 2),
+        "total_debt_outstanding": round(total_debt_principal + total_interest, 2),
+        "total_monthly_interest_liability": round(total_monthly_interest_liability, 2),
+        "total_yearly_interest_liability": round(total_yearly_interest_liability, 2),
+        "category_spend": category_spend,
+        "category_gain": category_gain,
         "chart_data": formatted_chart_data
     }
 

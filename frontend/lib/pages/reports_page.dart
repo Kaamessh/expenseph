@@ -117,34 +117,52 @@ class _ReportsPageState extends State<ReportsPage> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // 1. Dual stats rows
-                            Row(
+                            // 1. Metrics Grid
+                            GridView.count(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 1.5,
                               children: [
-                                Expanded(
-                                  child: _buildStatCard(
-                                    title: AppTranslations.t(context, 'total_in'),
-                                    value: currencyFormat.format(totalGain),
-                                    color: const Color(0xFF09BC8A),
-                                  ),
+                                _buildStatCard(
+                                  title: AppTranslations.t(context, 'total_in'),
+                                  value: currencyFormat.format(totalGain),
+                                  color: const Color(0xFF09BC8A),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildStatCard(
-                                    title: AppTranslations.t(context, 'total_out'),
-                                    value: currencyFormat.format(totalSpend),
-                                    color: const Color(0xFFE05D5D),
-                                  ),
+                                _buildStatCard(
+                                  title: AppTranslations.t(context, 'total_out'),
+                                  value: currencyFormat.format(totalSpend),
+                                  color: const Color(0xFFE05D5D),
+                                ),
+                                _buildStatCard(
+                                  title: AppTranslations.t(context, 'total_debt_stat'),
+                                  value: currencyFormat.format(_reportsData?['total_debt_principal']?.toDouble() ?? 0.0),
+                                  color: Colors.blueAccent,
+                                ),
+                                _buildStatCard(
+                                  title: AppTranslations.t(context, 'total_outstanding_stat'),
+                                  value: currencyFormat.format(_reportsData?['total_debt_outstanding']?.toDouble() ?? 0.0),
+                                  color: Colors.amber,
+                                ),
+                                _buildStatCard(
+                                  title: AppTranslations.t(context, 'total_monthly_interest'),
+                                  value: currencyFormat.format(_reportsData?['total_monthly_interest_liability']?.toDouble() ?? 0.0),
+                                  color: Colors.cyanAccent,
+                                ),
+                                _buildStatCard(
+                                  title: AppTranslations.t(context, 'interest_accrued'),
+                                  value: currencyFormat.format(totalInterest),
+                                  color: Colors.amber[300]!,
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            _buildStatCard(
-                              title: AppTranslations.t(context, 'interest_accrued'),
-                              value: currencyFormat.format(totalInterest),
-                              color: Colors.amber,
-                              isFullWidth: true,
-                            ),
                             const SizedBox(height: 24),
+
+                            // 2. Category Breakdown Section
+                            _buildCategoryBreakdownSection(context, _reportsData, currencyFormat),
+                            const SizedBox(height: 12),
 
                             // 2. Chart section
                             Text(
@@ -368,5 +386,168 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildCategoryBreakdownSection(
+    BuildContext context,
+    Map<String, dynamic>? reportsData,
+    NumberFormat currencyFormat,
+  ) {
+    final Map<String, dynamic> categorySpend = Map<String, dynamic>.from(reportsData?['category_spend'] ?? {});
+    final Map<String, dynamic> categoryGain = Map<String, dynamic>.from(reportsData?['category_gain'] ?? {});
+
+    final double totalSpend = reportsData?['total_spend']?.toDouble() ?? 0.0;
+    final double totalGain = reportsData?['total_gain']?.toDouble() ?? 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Spend breakdown
+        if (categorySpend.isNotEmpty) ...[
+          Text(
+            AppTranslations.t(context, 'category_breakdown') + ' - ' + AppTranslations.t(context, 'spend'),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            color: const Color(0xFF1E1E2E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: categorySpend.entries.map((entry) {
+                  final String cat = entry.key;
+                  final double amt = entry.value.toDouble();
+                  final double pct = totalSpend > 0 ? (amt / totalSpend) : 0.0;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(_getCategoryIcon(cat), color: const Color(0xFFE05D5D), size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppTranslations.t(context, 'category_$cat'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '${currencyFormat.format(amt)} (${(pct * 100).toStringAsFixed(1)}%)',
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: pct,
+                            backgroundColor: Colors.grey[800],
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFE05D5D)),
+                            minHeight: 6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        // Gain breakdown
+        if (categoryGain.isNotEmpty) ...[
+          Text(
+            AppTranslations.t(context, 'category_breakdown') + ' - ' + AppTranslations.t(context, 'gain'),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            color: const Color(0xFF1E1E2E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: categoryGain.entries.map((entry) {
+                  final String cat = entry.key;
+                  final double amt = entry.value.toDouble();
+                  final double pct = totalGain > 0 ? (amt / totalGain) : 0.0;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(_getCategoryIcon(cat), color: const Color(0xFF09BC8A), size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  AppTranslations.t(context, 'category_$cat'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '${currencyFormat.format(amt)} (${(pct * 100).toStringAsFixed(1)}%)',
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: pct,
+                            backgroundColor: Colors.grey[800],
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF09BC8A)),
+                            minHeight: 6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ],
+    );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Food':
+        return Icons.fastfood;
+      case 'Rent':
+        return Icons.home;
+      case 'Salary':
+        return Icons.monetization_on;
+      case 'Travel':
+        return Icons.directions_car;
+      case 'Shopping':
+        return Icons.shopping_bag;
+      case 'Utilities':
+        return Icons.electrical_services;
+      case 'Investment':
+        return Icons.trending_up;
+      case 'Others':
+      default:
+        return Icons.category;
+    }
   }
 }
