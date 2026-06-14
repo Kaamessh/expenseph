@@ -85,8 +85,6 @@ def main():
         print(f"Gradle file not found: {gradle_path}")
 
     # Patch jcenter() and namespace for AGP 8+ out of pub-cache plugins (e.g. ota_update) to fix Android builds
-    import glob
-    import re
     pub_cache = os.path.expanduser("~/.pub-cache/hosted/pub.dev")
     if not os.path.exists(pub_cache):
         pub_cache = os.path.expanduser("~/AppData/Local/Pub/Cache/hosted/pub.dev")
