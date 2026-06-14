@@ -16,7 +16,7 @@ load_dotenv()
 app = FastAPI(
     title="Expense & Debt Tracker API",
     description="Backend API serving the Expense & Debt Tracker app, connected to Supabase.",
-    version="1.7.0"
+    version="1.8.0"
 )
 
 # Enable CORS for Flutter Client access
@@ -45,6 +45,7 @@ else:
 
 supabase_client: Optional[Client] = None
 is_mock_mode = False
+supabase_error: Optional[str] = None
 
 if SUPABASE_URL and SUPABASE_KEY and "your_supabase_project_url" not in SUPABASE_URL and "your_supabase_anon_or_service_key" not in SUPABASE_KEY:
     try:
@@ -53,9 +54,11 @@ if SUPABASE_URL and SUPABASE_KEY and "your_supabase_project_url" not in SUPABASE
     except Exception as e:
         print(f"Error initializing Supabase client: {e}. Running in Mock Mode.")
         is_mock_mode = True
+        supabase_error = f"{type(e).__name__}: {str(e)}"
 else:
     print("Supabase credentials missing or invalid. Running in Mock Mode.")
     is_mock_mode = True
+    supabase_error = "Credentials missing or invalid"
 
 
 # --- SECURE HASHING UTILITY ---
@@ -174,14 +177,17 @@ def get_health():
         "status": "online",
         "mode": "supabase" if not is_mock_mode else "in-memory-mock",
         "message": "Welcome to the Expense & Debt Tracker API!",
-        "datetime": datetime.now(timezone.utc).isoformat()
+        "datetime": datetime.now(timezone.utc).isoformat(),
+        "supabase_url": SUPABASE_URL,
+        "is_mock_mode": is_mock_mode,
+        "supabase_error": supabase_error
     }
 
 
 @app.get("/api/version")
 def get_version():
     return {
-        "version": "1.7.0",
+        "version": "1.8.0",
         "apk_url": "https://expenseph.vercel.app/app-release.apk"
     }
 
