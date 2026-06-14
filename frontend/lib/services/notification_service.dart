@@ -73,7 +73,7 @@ class AppNotificationService {
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.dayOfMonth,
+      matchDateTimeComponents: DateTimeComponents.dayOfMonthAndTime,
     );
   }
 

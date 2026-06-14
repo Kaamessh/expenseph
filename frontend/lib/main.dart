@@ -359,7 +359,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    'v${MainNavigationShell.appVersion} • Supabase Connected',
+                    'v$appVersion • Supabase Connected',
                     style: TextStyle(color: Colors.grey[600], fontSize: 11),
                   ),
                 ),
