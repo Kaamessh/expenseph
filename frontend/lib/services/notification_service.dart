@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -8,6 +9,7 @@ class AppNotificationService {
   static bool _isInitialized = false;
 
   static Future<void> init() async {
+    if (kIsWeb) return;
     if (_isInitialized) return;
     
     tz.initializeTimeZones();
@@ -25,6 +27,7 @@ class AppNotificationService {
   }
 
   static Future<void> requestPermissions() async {
+    if (kIsWeb) return;
     final androidImplementation = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidImplementation != null) {
       await androidImplementation.requestNotificationsPermission();
@@ -32,11 +35,13 @@ class AppNotificationService {
   }
 
   static Future<void> cancelAll() async {
+    if (kIsWeb) return;
     await init();
     await _plugin.cancelAll();
   }
 
   static Future<void> scheduleDebtReminder(Debt debt) async {
+    if (kIsWeb) return;
     await init();
     
     int day = debt.dueDay;
@@ -73,6 +78,7 @@ class AppNotificationService {
   }
 
   static Future<void> scheduleDebtReminders(List<Debt> debts, bool enabled) async {
+    if (kIsWeb) return;
     await cancelAll();
     if (!enabled) return;
 
