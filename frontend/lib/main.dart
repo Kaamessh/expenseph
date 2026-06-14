@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:ota_update/ota_update.dart';
 import 'services/api_service.dart';
 import 'services/translations.dart';
 import 'services/notification_service.dart';
@@ -66,7 +67,7 @@ class MainHomeWrapper extends StatefulWidget {
 }
 
 class _MainHomeWrapperState extends State<MainHomeWrapper> {
-  static const String appVersion = "2.0.0"; // Local version of the app
+  static const String appVersion = "3.0.0"; // Local version of the app
   bool _checkedUpdate = false;
 
   @override
@@ -145,29 +146,9 @@ class _MainHomeWrapperState extends State<MainHomeWrapper> {
             ),
           ),
           ElevatedButton(
-            onPressed: () async {
-              final url = Uri.parse(apkUrl);
+            onPressed: () {
               Navigator.pop(context);
-              try {
-                bool launched = await launchUrl(url, mode: LaunchMode.externalApplication);
-                if (!launched) {
-                  await Clipboard.setData(ClipboardData(text: apkUrl));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Update URL copied to clipboard! Paste it in your browser to download.'),
-                      duration: Duration(seconds: 5),
-                    ),
-                  );
-                }
-              } catch (_) {
-                await Clipboard.setData(ClipboardData(text: apkUrl));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Update URL copied to clipboard! Paste it in your browser to download.'),
-                    duration: Duration(seconds: 5),
-                  ),
-                );
-              }
+              _startOTAUpdate(apkUrl);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.cyan,
@@ -180,6 +161,115 @@ class _MainHomeWrapperState extends State<MainHomeWrapper> {
           ),
         ],
       ),
+    );
+  }
+
+  void _startOTAUpdate(String apkUrl) {
+    final ValueNotifier<double> downloadProgress = ValueNotifier<double>(0.0);
+    final ValueNotifier<String> statusMessage = ValueNotifier<String>('Starting update...');
+    final ValueNotifier<bool> hasError = ValueNotifier<bool>(false);
+    bool isClosed = false;
+
+    final subscription = OtaUpdate()
+        .execute(
+      apkUrl,
+      destinationFilename: 'expense_tracker_update.apk',
+    )
+        .listen(
+      (OtaEvent event) {
+        switch (event.status) {
+          case OtaStatus.DOWNLOADING:
+            statusMessage.value = 'Downloading update...';
+            downloadProgress.value = double.tryParse(event.value ?? '0') ?? 0.0;
+            break;
+          case OtaStatus.INSTALLING:
+            statusMessage.value = 'Preparing installation...';
+            if (!isClosed) {
+              isClosed = true;
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+            break;
+          case OtaStatus.ALREADY_UP_TO_DATE:
+            statusMessage.value = 'Already up to date.';
+            break;
+          case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
+            statusMessage.value = 'Storage permission not granted.';
+            hasError.value = true;
+            break;
+          case OtaStatus.DOWNLOAD_ERROR:
+          case OtaStatus.INTERNAL_ERROR:
+          default:
+            statusMessage.value = 'Download failed: ${event.value}';
+            hasError.value = true;
+            break;
+        }
+      },
+      onError: (err) {
+        statusMessage.value = 'Error: $err';
+        hasError.value = true;
+      },
+    );
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            backgroundColor: const Color(0xFF1E1E2E),
+            title: Row(
+              children: const [
+                Icon(Icons.downloading, color: Colors.cyanAccent),
+                SizedBox(width: 10),
+                Text(
+                  'Downloading Update',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ],
+            ),
+            content: AnimatedBuilder(
+              animation: Listenable.merge([downloadProgress, statusMessage, hasError]),
+              builder: (context, child) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      statusMessage.value,
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    if (!hasError.value) ...[
+                      LinearProgressIndicator(
+                        value: downloadProgress.value / 100.0,
+                        backgroundColor: Colors.grey[800],
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.cyan),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${downloadProgress.value.toStringAsFixed(0)}%',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () {
+                          subscription.cancel();
+                          Navigator.of(context, rootNavigator: true).pop();
+                        },
+                        child: const Text('CLOSE', style: TextStyle(color: Colors.redAccent)),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
