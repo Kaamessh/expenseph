@@ -1,4 +1,5 @@
 import os
+import re
 
 def main():
     manifest_path = 'frontend/android/app/src/main/AndroidManifest.xml'
@@ -30,6 +31,40 @@ def main():
         file.write(content)
 
     print("AndroidManifest.xml patching completed.")
+
+    # Now patch build.gradle.kts for Core Library Desugaring
+    gradle_path = 'frontend/android/app/build.gradle.kts'
+    if os.path.exists(gradle_path):
+        with open(gradle_path, 'r', encoding='utf-8') as file:
+            gradle_content = file.read()
+
+        updated = False
+        if 'isCoreLibraryDesugaringEnabled' not in gradle_content:
+            gradle_content = re.sub(
+                r'(compileOptions\s*\{)',
+                r'\1\n        isCoreLibraryDesugaringEnabled = true',
+                gradle_content
+            )
+            print("Enabled isCoreLibraryDesugaringEnabled in build.gradle.kts.")
+            updated = True
+
+        if 'coreLibraryDesugaring' not in gradle_content:
+            gradle_content = re.sub(
+                r'(dependencies\s*\{)',
+                r'\1\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")',
+                gradle_content
+            )
+            print("Added coreLibraryDesugaring dependency to build.gradle.kts.")
+            updated = True
+
+        if updated:
+            with open(gradle_path, 'w', encoding='utf-8') as file:
+                file.write(gradle_content)
+            print("build.gradle.kts patching completed.")
+        else:
+            print("build.gradle.kts already patched or no changes needed.")
+    else:
+        print(f"Gradle file not found: {gradle_path}")
 
 if __name__ == '__main__':
     main()
