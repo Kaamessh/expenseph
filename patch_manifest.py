@@ -84,28 +84,44 @@ def main():
     else:
         print(f"Gradle file not found: {gradle_path}")
 
-    # Patch jcenter() out of pub-cache plugins (e.g. ota_update) to fix Android builds
+    # Patch jcenter() and namespace for AGP 8+ out of pub-cache plugins (e.g. ota_update) to fix Android builds
     import glob
+    import re
     pub_cache = os.path.expanduser("~/.pub-cache/hosted/pub.dev")
-    # Also check Windows path just in case
     if not os.path.exists(pub_cache):
         pub_cache = os.path.expanduser("~/AppData/Local/Pub/Cache/hosted/pub.dev")
     
     if os.path.exists(pub_cache):
         for root_dir, _, files in os.walk(pub_cache):
-            for file in files:
-                if file == 'build.gradle':
-                    filepath = os.path.join(root_dir, file)
-                    try:
-                        with open(filepath, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                        if 'jcenter()' in content:
-                            content = content.replace('jcenter()', 'mavenCentral()')
-                            with open(filepath, 'w', encoding='utf-8') as f:
-                                f.write(content)
-                            print(f"Patched jcenter() -> mavenCentral() in {filepath}")
-                    except Exception as e:
-                        print(f"Error patching {filepath}: {e}")
+            if 'build.gradle' in files:
+                filepath = os.path.join(root_dir, 'build.gradle')
+                try:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    
+                    changed = False
+                    if 'jcenter()' in content:
+                        content = content.replace('jcenter()', 'mavenCentral()')
+                        changed = True
+                    
+                    if 'namespace' not in content and 'android {' in content:
+                        # Try to find AndroidManifest.xml to extract package name
+                        manifest_path = os.path.join(root_dir, 'src', 'main', 'AndroidManifest.xml')
+                        if os.path.exists(manifest_path):
+                            with open(manifest_path, 'r', encoding='utf-8') as mf:
+                                m_content = mf.read()
+                                match = re.search(r'package="([^"]+)"', m_content)
+                                if match:
+                                    pkg = match.group(1)
+                                    content = re.sub(r'(android\s*\{)', rf'\1\n    namespace "{pkg}"', content, count=1)
+                                    changed = True
+                    
+                    if changed:
+                        with open(filepath, 'w', encoding='utf-8') as f:
+                            f.write(content)
+                        print(f"Patched build.gradle in {filepath}")
+                except Exception as e:
+                    print(f"Error patching {filepath}: {e}")
 
 if __name__ == '__main__':
     main()
