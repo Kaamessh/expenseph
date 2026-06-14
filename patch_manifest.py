@@ -84,5 +84,28 @@ def main():
     else:
         print(f"Gradle file not found: {gradle_path}")
 
+    # Patch jcenter() out of pub-cache plugins (e.g. ota_update) to fix Android builds
+    import glob
+    pub_cache = os.path.expanduser("~/.pub-cache/hosted/pub.dev")
+    # Also check Windows path just in case
+    if not os.path.exists(pub_cache):
+        pub_cache = os.path.expanduser("~/AppData/Local/Pub/Cache/hosted/pub.dev")
+    
+    if os.path.exists(pub_cache):
+        for root_dir, _, files in os.walk(pub_cache):
+            for file in files:
+                if file == 'build.gradle':
+                    filepath = os.path.join(root_dir, file)
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                        if 'jcenter()' in content:
+                            content = content.replace('jcenter()', 'mavenCentral()')
+                            with open(filepath, 'w', encoding='utf-8') as f:
+                                f.write(content)
+                            print(f"Patched jcenter() -> mavenCentral() in {filepath}")
+                    except Exception as e:
+                        print(f"Error patching {filepath}: {e}")
+
 if __name__ == '__main__':
     main()
