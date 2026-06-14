@@ -44992,7 +44992,7 @@ s=b.d
 if(s==null)s=""
 r=t.p
 q=this.a
-return A.bs(A.b([new A.MR(B.F0,A.dy(A.bs(A.b([o,B.hv,n,B.hu,A.Y(s,p,p,p,A.bO(p,p,B.aI,p,p,p,p,p,p,p,p,11,p,p,p,p,p,!0,p,p,p,p,p,p,p,p),p,p,p)],r),B.r,B.dW,B.n,0,B.B),p,p),p),q.uQ(B.qW,4,A.a9(a,"my_user_profile"),B.qV),q.uQ(B.Ld,0,A.a9(a,"transaction_dashboard"),B.KR),q.uQ(B.L1,1,A.a9(a,"debt_management"),B.L0),q.uQ(B.Lb,3,A.a9(a,"advanced_reports"),B.KO),q.uQ(B.r_,2,A.a9(a,"application_settings"),B.L4),B.Jz,new A.av(B.q8,A.Om(!1,p,p,p,!0,p,p,p,!0,p,B.LI,p,p,p,p,new A.atS(a,b),!1,p,p,new A.bf(A.aS(10),B.l),p,p,p,A.Y(A.a9(a,"logout_account"),p,p,p,B.a_b,p,p,p),p,p,p),p),B.CM,new A.av(B.bw,A.Y("v2.0.0 \u2022 Supabase Connected",p,p,p,A.bO(p,p,B.dF,p,p,p,p,p,p,p,p,11,p,p,p,p,p,!0,p,p,p,p,p,p,p,p),p,p,p),p)],r),B.r,B.o,B.n,0,B.B)},
+return A.bs(A.b([new A.MR(B.F0,A.dy(A.bs(A.b([o,B.hv,n,B.hu,A.Y(s,p,p,p,A.bO(p,p,B.aI,p,p,p,p,p,p,p,p,11,p,p,p,p,p,!0,p,p,p,p,p,p,p,p),p,p,p)],r),B.r,B.dW,B.n,0,B.B),p,p),p),q.uQ(B.qW,4,A.a9(a,"my_user_profile"),B.qV),q.uQ(B.Ld,0,A.a9(a,"transaction_dashboard"),B.KR),q.uQ(B.L1,1,A.a9(a,"debt_management"),B.L0),q.uQ(B.Lb,3,A.a9(a,"advanced_reports"),B.KO),q.uQ(B.r_,2,A.a9(a,"application_settings"),B.L4),B.Jz,new A.av(B.q8,A.Om(!1,p,p,p,!0,p,p,p,!0,p,B.LI,p,p,p,p,new A.atS(a,b),!1,p,p,new A.bf(A.aS(10),B.l),p,p,p,A.Y(A.a9(a,"logout_account"),p,p,p,B.a_b,p,p,p),p,p,p),p),B.CM,new A.av(B.bw,A.Y("v3.0.0 \u2022 Supabase Connected",p,p,p,A.bO(p,p,B.dF,p,p,p,p,p,p,p,p,11,p,p,p,p,p,!0,p,p,p,p,p,p,p,p),p,p,p),p)],r),B.r,B.o,B.n,0,B.B)},
 $S:174}
 A.atS.prototype={
 $0(){A.cX(this.a,!1).ev(null)
