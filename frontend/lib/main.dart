@@ -70,7 +70,7 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedPageIndex = 0;
-  static const String appVersion = "1.6.0"; // Local version of the app
+  static const String appVersion = "1.7.0"; // Local version of the app
 
   @override
   void initState() {
@@ -326,7 +326,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    'v1.6.0 • Supabase Connected',
+                    'v1.7.0 • Supabase Connected',
                     style: TextStyle(color: Colors.grey[600], fontSize: 11),
                   ),
                 ),
