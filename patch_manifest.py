@@ -32,11 +32,14 @@ def main():
 
     print("AndroidManifest.xml patching completed.")
 
-    # Now patch build.gradle.kts for Core Library Desugaring
     gradle_path = 'frontend/android/app/build.gradle.kts'
     if os.path.exists(gradle_path):
         with open(gradle_path, 'r', encoding='utf-8') as file:
             gradle_content = file.read()
+
+        print("=== ORIGINAL GRADLE CONTENT ===")
+        print(gradle_content)
+        print("=== END ORIGINAL GRADLE CONTENT ===")
 
         updated = False
         if 'isCoreLibraryDesugaringEnabled' not in gradle_content:
