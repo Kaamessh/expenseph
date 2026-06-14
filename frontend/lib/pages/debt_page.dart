@@ -331,6 +331,48 @@ class _DebtPageState extends State<DebtPage> {
     }
   }
 
+  Future<void> _confirmDeleteDebt(String id) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: const Color(0xFF1E1E2E),
+        title: Text(
+          AppTranslations.t(context, 'confirm_delete_title'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          AppTranslations.t(context, 'confirm_delete_debt'),
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              AppTranslations.t(context, 'cancel'),
+              style: TextStyle(color: Colors.grey[400]),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(
+              AppTranslations.t(context, 'delete_btn'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      _deleteDebt(id);
+    }
+  }
+
   InputDecoration _getInputDecoration({required String label, required IconData icon}) {
     return InputDecoration(
       labelText: label,
@@ -531,7 +573,7 @@ class _DebtPageState extends State<DebtPage> {
                                                 ),
                                                 IconButton(
                                                   icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-                                                  onPressed: () => _deleteDebt(debt.id),
+                                                  onPressed: () => _confirmDeleteDebt(debt.id),
                                                 ),
                                               ],
                                             ),

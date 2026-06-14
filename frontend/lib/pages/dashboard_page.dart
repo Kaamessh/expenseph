@@ -182,6 +182,48 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Future<void> _confirmDeleteTransaction(String id) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: const Color(0xFF1E1E2E),
+        title: Text(
+          AppTranslations.t(context, 'confirm_delete_title'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          AppTranslations.t(context, 'confirm_delete_transaction'),
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              AppTranslations.t(context, 'cancel'),
+              style: TextStyle(color: Colors.grey[400]),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(
+              AppTranslations.t(context, 'delete_btn'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      _deleteTransaction(id);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Compute total gain / spend
@@ -470,6 +512,44 @@ class _DashboardPageState extends State<DashboardPage> {
                                     child: const Icon(Icons.delete, color: Colors.white),
                                   ),
                                   direction: DismissDirection.endToStart,
+                                  confirmDismiss: (direction) async {
+                                    return await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        backgroundColor: const Color(0xFF1E1E2E),
+                                        title: Text(
+                                          AppTranslations.t(context, 'confirm_delete_title'),
+                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                        ),
+                                        content: Text(
+                                          AppTranslations.t(context, 'confirm_delete_transaction'),
+                                          style: const TextStyle(color: Colors.white70),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, false),
+                                            child: Text(
+                                              AppTranslations.t(context, 'cancel'),
+                                              style: TextStyle(color: Colors.grey[400]),
+                                            ),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () => Navigator.pop(context, true),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.redAccent,
+                                              foregroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            child: Text(
+                                              AppTranslations.t(context, 'delete_btn'),
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                   onDismissed: (dir) => _deleteTransaction(tx.id),
                                   child: Card(
                                     color: const Color(0xFF1E1E2E),
@@ -491,13 +571,23 @@ class _DashboardPageState extends State<DashboardPage> {
                                         DateFormat('MMM dd, yyyy - hh:mm a').format(tx.timestamp),
                                         style: TextStyle(color: Colors.grey[500], fontSize: 12),
                                       ),
-                                      trailing: Text(
-                                        '${isGain ? '+' : '-'}${currencyFormat.format(tx.amount)}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16.0,
-                                          color: isGain ? const Color(0xFF09BC8A) : const Color(0xFFE05D5D),
-                                        ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '${isGain ? '+' : '-'}${currencyFormat.format(tx.amount)}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16.0,
+                                              color: isGain ? const Color(0xFF09BC8A) : const Color(0xFFE05D5D),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                                            onPressed: () => _confirmDeleteTransaction(tx.id),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),

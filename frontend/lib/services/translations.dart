@@ -88,6 +88,11 @@ class AppTranslations {
       'due_day': 'Due Day of Month',
       'due_day_label': 'Interest payment due day: ',
       'interest_payment_day': 'Interest Payment Day',
+      'delete_transaction': 'Delete Transaction',
+      'confirm_delete_transaction': 'Are you sure you want to delete this transaction?',
+      'confirm_delete_debt': 'Are you sure you want to delete this debt record?',
+      'confirm_delete_title': 'Confirm Deletion',
+      'delete_btn': 'DELETE',
     },
     'ta': {
       'transaction_dashboard': 'பரிவர்த்தனை டாஷ்போர்டு',
@@ -173,6 +178,11 @@ class AppTranslations {
       'due_day': 'மாதத்தின் செலுத்தவேண்டிய நாள்',
       'due_day_label': 'வட்டி செலுத்த வேண்டிய நாள்: ',
       'interest_payment_day': 'வட்டி செலுத்தும் நாள்',
+      'delete_transaction': 'பரிவர்த்தனையை நீக்கு',
+      'confirm_delete_transaction': 'இந்தப் பரிவர்த்தனையை நீக்க விரும்புகிறீர்களா?',
+      'confirm_delete_debt': 'இந்தக் கடன் பதிவை நீக்க விரும்புகிறீர்களா?',
+      'confirm_delete_title': 'நீக்குதலை உறுதிப்படுத்தவும்',
+      'delete_btn': 'நீக்கு',
     }
   };
 
