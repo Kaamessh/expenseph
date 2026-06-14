@@ -189,9 +189,6 @@ class _MainHomeWrapperState extends State<MainHomeWrapper> {
               Navigator.of(context, rootNavigator: true).pop();
             }
             break;
-          case OtaStatus.ALREADY_UP_TO_DATE:
-            statusMessage.value = 'Already up to date.';
-            break;
           case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
             statusMessage.value = 'Storage permission not granted.';
             hasError.value = true;
