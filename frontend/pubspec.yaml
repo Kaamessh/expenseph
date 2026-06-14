@@ -1,6 +1,6 @@
 name: expense_debt_tracker
 description: A new Flutter Expense and Debt Tracking application with rich visuals.
-version: 1.9.0+1
+version: 2.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -13,6 +13,7 @@ dependencies:
   provider: ^6.1.2
   url_launcher: ^6.2.6
   shared_preferences: ^2.2.3
+  flutter_local_notifications: ^17.0.0
 
 dev_dependencies:
   flutter_test:

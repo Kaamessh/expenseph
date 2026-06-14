@@ -11,6 +11,8 @@ class ApiConfig extends ChangeNotifier {
   String? _userId;
   String? _email;
   String? _mobileNumber;
+  String _languageCode = 'en';
+  bool _notificationsEnabled = true;
   bool _isInitialized = false;
 
   ApiConfig() {
@@ -22,6 +24,8 @@ class ApiConfig extends ChangeNotifier {
   String? get userId => _userId;
   String? get email => _email;
   String? get mobileNumber => _mobileNumber;
+  String get languageCode => _languageCode;
+  bool get notificationsEnabled => _notificationsEnabled;
   bool get isLoggedIn => _userId != null;
 
   Future<void> _loadSession() async {
@@ -38,12 +42,36 @@ class ApiConfig extends ChangeNotifier {
         _userId = prefs.getString('userId');
         _email = prefs.getString('email');
         _mobileNumber = prefs.getString('mobileNumber');
+        _languageCode = prefs.getString('languageCode') ?? 'en';
+        _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
       } catch (e) {
         // fallback
       }
     }
     _isInitialized = true;
     notifyListeners();
+  }
+
+  void updateLanguage(String code) async {
+    _languageCode = code;
+    notifyListeners();
+    if (!kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('languageCode', code);
+      } catch (_) {}
+    }
+  }
+
+  void updateNotifications(bool enabled) async {
+    _notificationsEnabled = enabled;
+    notifyListeners();
+    if (!kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('notificationsEnabled', enabled);
+      } catch (_) {}
+    }
   }
 
   void updateBaseUrl(String newUrl) async {
@@ -239,6 +267,7 @@ class ApiService {
     required double originalAmount,
     required double interestRate,
     required DateTime createdAt,
+    required int dueDay,
   }) async {
     final response = await http.post(
       Uri.parse('$_url/api/debts'),
@@ -248,6 +277,7 @@ class ApiService {
         'original_amount': originalAmount,
         'interest_rate': interestRate,
         'created_at': createdAt.toIso8601String(),
+        'due_day': dueDay,
       }),
     );
 
@@ -264,6 +294,7 @@ class ApiService {
     required double originalAmount,
     required double interestRate,
     required DateTime createdAt,
+    required int dueDay,
   }) async {
     final response = await http.put(
       Uri.parse('$_url/api/debts/$id'),
@@ -273,6 +304,7 @@ class ApiService {
         'original_amount': originalAmount,
         'interest_rate': interestRate,
         'created_at': createdAt.toIso8601String(),
+        'due_day': dueDay,
       }),
     );
 

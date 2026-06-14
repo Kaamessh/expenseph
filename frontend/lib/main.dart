@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'services/api_service.dart';
+import 'services/translations.dart';
+import 'services/notification_service.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/debt_page.dart';
 import 'pages/reports_page.dart';
@@ -63,16 +65,18 @@ class MainHomeWrapper extends StatefulWidget {
 }
 
 class _MainHomeWrapperState extends State<MainHomeWrapper> {
-  static const String appVersion = "1.9.0"; // Local version of the app
+  static const String appVersion = "2.0.0"; // Local version of the app
   bool _checkedUpdate = false;
 
   @override
   void initState() {
     super.initState();
+    AppNotificationService.init();
     if (!kIsWeb) {
       // Check for updates on mobile devices after a short delay
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkForUpdates();
+        AppNotificationService.requestPermissions();
       });
     }
   }
@@ -184,7 +188,7 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedPageIndex = 0;
-  static const String appVersion = "1.9.0"; // Local version of the app
+  static const String appVersion = "2.0.0"; // Local version of the app
 
   // List of page widgets
   final List<Widget> _pages = const [
@@ -195,21 +199,29 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     ProfilePage(),
   ];
 
-  // List of page titles matching drawer links
-  final List<String> _pageTitles = const [
-    'Transaction Dashboard',
-    'Debt Management',
-    'Application Settings',
-    'Advanced Reports',
-    'My User Profile',
-  ];
+  String _getPageTitle(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        return AppTranslations.t(context, 'transaction_dashboard');
+      case 1:
+        return AppTranslations.t(context, 'debt_management');
+      case 2:
+        return AppTranslations.t(context, 'application_settings');
+      case 3:
+        return AppTranslations.t(context, 'advanced_reports');
+      case 4:
+        return AppTranslations.t(context, 'my_user_profile');
+      default:
+        return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _pageTitles[_selectedPageIndex],
+          _getPageTitle(context, _selectedPageIndex),
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
@@ -295,31 +307,31 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                    index: 4,
                    icon: Icons.person_outline,
                    selectedIcon: Icons.person,
-                   label: 'My Profile',
+                   label: AppTranslations.t(context, 'my_user_profile'),
                  ),
                  _buildDrawerTile(
                    index: 0,
                    icon: Icons.dashboard_outlined,
                    selectedIcon: Icons.dashboard,
-                   label: 'Main Dashboard',
+                   label: AppTranslations.t(context, 'transaction_dashboard'),
                  ),
                  _buildDrawerTile(
                    index: 1,
                    icon: Icons.people_outline,
                    selectedIcon: Icons.people,
-                   label: 'Debt Page',
+                   label: AppTranslations.t(context, 'debt_management'),
                  ),
                  _buildDrawerTile(
                    index: 3, // Group reports near debts
                    icon: Icons.bar_chart_outlined,
                    selectedIcon: Icons.bar_chart,
-                   label: 'Reports Page',
+                   label: AppTranslations.t(context, 'advanced_reports'),
                  ),
                  _buildDrawerTile(
                    index: 2, // Settings last
                    icon: Icons.settings_outlined,
                    selectedIcon: Icons.settings,
-                   label: 'Settings Page',
+                   label: AppTranslations.t(context, 'application_settings'),
                  ),
 
                 const Divider(color: Colors.cyan, thickness: 0.2, indent: 16, endIndent: 16),
@@ -330,9 +342,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                   child: ListTile(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
                     leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                    title: const Text(
-                      'Logout Account',
-                      style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                    title: Text(
+                      AppTranslations.t(context, 'logout_account'),
+                      style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                     ),
                     onTap: () {
                       Navigator.pop(context); // close drawer first
@@ -347,7 +359,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    'v1.9.0 • Supabase Connected',
+                    'v${MainNavigationShell.appVersion} • Supabase Connected',
                     style: TextStyle(color: Colors.grey[600], fontSize: 11),
                   ),
                 ),

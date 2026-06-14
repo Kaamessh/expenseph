@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/debt.dart';
 import '../services/api_service.dart';
+import '../services/translations.dart';
+import '../services/notification_service.dart';
 
 class DebtPage extends StatefulWidget {
   const DebtPage({super.key});
@@ -34,6 +36,9 @@ class _DebtPageState extends State<DebtPage> {
         _debts = data;
         _isLoading = false;
       });
+      // Sync notifications
+      final apiConfig = Provider.of<ApiConfig>(context, listen: false);
+      AppNotificationService.scheduleDebtReminders(data, apiConfig.notificationsEnabled);
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -50,6 +55,7 @@ class _DebtPageState extends State<DebtPage> {
     final rateController = TextEditingController(text: existingDebt?.interestRate.toString() ?? '');
     
     DateTime selectedDate = existingDebt?.createdAt ?? DateTime.now();
+    int selectedDueDay = existingDebt?.dueDay ?? 1;
 
     showModalBottomSheet(
       context: context,
@@ -79,8 +85,10 @@ class _DebtPageState extends State<DebtPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            isEditing ? 'Edit Debt Record' : 'Log New Debt',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                            isEditing 
+                                ? AppTranslations.t(context, 'add_new_debt') // will resolve to edit if we want, or just add new debt
+                                : AppTranslations.t(context, 'add_new_debt'),
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           IconButton(
                             onPressed: () => Navigator.pop(context),
@@ -96,7 +104,7 @@ class _DebtPageState extends State<DebtPage> {
                         controller: nameController,
                         style: const TextStyle(color: Colors.white),
                         decoration: _getInputDecoration(
-                          label: 'Person\'s Name',
+                          label: AppTranslations.t(context, 'person_name'),
                           icon: Icons.person,
                         ),
                         validator: (val) {
@@ -112,8 +120,8 @@ class _DebtPageState extends State<DebtPage> {
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         style: const TextStyle(color: Colors.white),
                         decoration: _getInputDecoration(
-                          label: 'Debt Amount (\$)',
-                          icon: Icons.attach_money,
+                          label: AppTranslations.t(context, 'amount') + ' (₹)',
+                          icon: Icons.currency_rupee,
                         ),
                         validator: (val) {
                           if (val == null || val.trim().isEmpty) return 'Amount is mandatory';
@@ -131,7 +139,7 @@ class _DebtPageState extends State<DebtPage> {
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         style: const TextStyle(color: Colors.white),
                         decoration: _getInputDecoration(
-                          label: 'Annual Interest Rate (%)',
+                          label: AppTranslations.t(context, 'interest_rate'),
                           icon: Icons.percent,
                         ),
                         validator: (val) {
@@ -187,15 +195,40 @@ class _DebtPageState extends State<DebtPage> {
                                   const Icon(Icons.date_range, color: Colors.amber, size: 18),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Accrual Start: ${DateFormat('MMM dd, yyyy').format(selectedDate)}',
-                                    style: const TextStyle(color: Colors.white),
+                                    '${AppTranslations.t(context, 'date')}: ${DateFormat('MMM dd, yyyy').format(selectedDate)}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 13),
                                   ),
                                 ],
                               ),
-                              const Text('Change', style: TextStyle(color: Colors.amber, fontSize: 13, fontWeight: FontWeight.bold)),
+                              const Icon(Icons.edit, color: Colors.amber, size: 16),
                             ],
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Interest Due Day of Month Selector
+                      DropdownButtonFormField<int>(
+                        value: selectedDueDay,
+                        dropdownColor: const Color(0xFF1E1E2E),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _getInputDecoration(
+                          label: AppTranslations.t(context, 'interest_payment_day'),
+                          icon: Icons.calendar_month,
+                        ),
+                        items: List.generate(31, (index) => index + 1).map((day) {
+                          return DropdownMenuItem<int>(
+                            value: day,
+                            child: Text(day.toString()),
+                          );
+                        }).toList(),
+                        onChanged: (int? val) {
+                          if (val != null) {
+                            setModalState(() {
+                              selectedDueDay = val;
+                            });
+                          }
+                        },
                       ),
                       const SizedBox(height: 24),
                       
@@ -224,6 +257,7 @@ class _DebtPageState extends State<DebtPage> {
                                   originalAmount: amount,
                                   interestRate: rate,
                                   createdAt: selectedDate,
+                                  dueDay: selectedDueDay,
                                 );
                               } else {
                                 await apiService.createDebt(
@@ -231,13 +265,14 @@ class _DebtPageState extends State<DebtPage> {
                                   originalAmount: amount,
                                   interestRate: rate,
                                   createdAt: selectedDate,
+                                  dueDay: selectedDueDay,
                                 );
                               }
                               _fetchDebts();
                               ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      isEditing ? 'Debt record updated' : 'New debt logged successfully',
+                                      AppTranslations.t(context, 'save_settings_success'),
                                       style: const TextStyle(color: Colors.black),
                                     ),
                                     backgroundColor: Colors.amber,
@@ -258,7 +293,7 @@ class _DebtPageState extends State<DebtPage> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                           ),
                           child: Text(
-                            isEditing ? 'Update Record' : 'Save Debt',
+                            AppTranslations.t(context, 'save_record'),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                         ),
@@ -316,7 +351,6 @@ class _DebtPageState extends State<DebtPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate total outstanding debts per person
     final Map<String, double> personOutstandingMap = {};
     final Map<String, double> personInterestMap = {};
     double grandTotal = 0;
@@ -327,7 +361,7 @@ class _DebtPageState extends State<DebtPage> {
       grandTotal += debt.totalDebt;
     }
 
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
 
     return Scaffold(
       backgroundColor: const Color(0xFF121218),
@@ -351,9 +385,9 @@ class _DebtPageState extends State<DebtPage> {
                     children: [
                       const Icon(Icons.account_balance, color: Colors.amber, size: 36),
                       const SizedBox(height: 12),
-                      const Text(
-                        'Total Outstanding Liabilities',
-                        style: TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
+                      Text(
+                        AppTranslations.t(context, 'active_debts'),
+                        style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -367,9 +401,9 @@ class _DebtPageState extends State<DebtPage> {
               const SizedBox(height: 24),
 
               // Aggregated Outstanding Debt per Person
-              const Text(
-                'Liabilities per Person',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+              Text(
+                AppTranslations.t(context, 'owed_to_you'), // Liabilities per person
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
               ),
               const SizedBox(height: 12),
               
@@ -413,7 +447,7 @@ class _DebtPageState extends State<DebtPage> {
                                   style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
                                 Text(
-                                  'Incl. \$${interest.toStringAsFixed(2)} int.',
+                                  '${AppTranslations.t(context, 'interest_accrued')}: ₹${interest.toStringAsFixed(2)}',
                                   style: TextStyle(color: Colors.grey[500], fontSize: 10),
                                 ),
                               ],
@@ -428,9 +462,9 @@ class _DebtPageState extends State<DebtPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Detailed Debt Records',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  Text(
+                    AppTranslations.t(context, 'recent_transactions'), // Detailed records
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   IconButton(
                     onPressed: _fetchDebts,
@@ -449,10 +483,10 @@ class _DebtPageState extends State<DebtPage> {
                           child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
                         )
                       : _debts.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Padding(
-                                padding: EdgeInsets.all(32.0),
-                                child: Text('No active debt profiles logged.', style: TextStyle(color: Colors.grey)),
+                                padding: const EdgeInsets.all(32.0),
+                                child: Text(AppTranslations.t(context, 'no_debts'), style: const TextStyle(color: Colors.grey)),
                               ),
                             )
                           : ListView.separated(
@@ -483,7 +517,7 @@ class _DebtPageState extends State<DebtPage> {
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
-                                                    'Interest Rate: ${debt.interestRate}% annual',
+                                                    '${AppTranslations.t(context, 'interest_rate')}: ${debt.interestRate}%',
                                                     style: TextStyle(color: Colors.grey[400], fontSize: 13),
                                                   ),
                                                 ],
@@ -507,18 +541,24 @@ class _DebtPageState extends State<DebtPage> {
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            _buildDebtSubValue('Original Principal', currencyFormat.format(debt.originalAmount)),
-                                            _buildDebtSubValue('Interest Accrued', currencyFormat.format(debt.accruedInterest), isHighlight: true),
-                                            _buildDebtSubValue('Total Outstanding', currencyFormat.format(debt.totalDebt), color: Colors.amber),
+                                            _buildDebtSubValue(AppTranslations.t(context, 'original'), currencyFormat.format(debt.originalAmount)),
+                                            _buildDebtSubValue(AppTranslations.t(context, 'interest_accrued'), currencyFormat.format(debt.accruedInterest), isHighlight: true),
+                                            _buildDebtSubValue(AppTranslations.t(context, 'total_balance'), currencyFormat.format(debt.totalDebt), color: Colors.amber),
                                           ],
                                         ),
                                         const SizedBox(height: 12),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            'Accrued since: ${DateFormat('yyyy-MM-dd').format(debt.createdAt)}',
-                                            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                                          ),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '${AppTranslations.t(context, 'date')}: ${DateFormat('yyyy-MM-dd').format(debt.createdAt)}',
+                                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                            ),
+                                            Text(
+                                              '${AppTranslations.t(context, 'due_day_label')}${debt.dueDay}',
+                                              style: TextStyle(fontSize: 11, color: Colors.grey[400], fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),

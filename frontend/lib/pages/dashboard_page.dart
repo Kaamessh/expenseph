@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../services/api_service.dart';
+import '../services/translations.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -194,7 +195,7 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
 
     return Scaffold(
       backgroundColor: const Color(0xFF121218),
@@ -212,7 +213,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   Expanded(
                     child: _buildBalanceCard(
-                      title: 'Total Gain',
+                      title: AppTranslations.t(context, 'total_earnings'),
                       amount: totalGain,
                       color: const Color(0xFF09BC8A),
                       icon: Icons.trending_up,
@@ -221,7 +222,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(width: 12.0),
                   Expanded(
                     child: _buildBalanceCard(
-                      title: 'Total Spend',
+                      title: AppTranslations.t(context, 'total_spendings'),
                       amount: totalSpend,
                       color: const Color(0xFFE05D5D),
                       icon: Icons.trending_down,
@@ -244,7 +245,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Record Transaction',
+                          AppTranslations.t(context, 'record_transaction'),
                           style: TextStyle(
                             fontSize: 18.0,
                             fontWeight: FontWeight.bold,
@@ -258,7 +259,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           children: [
                             Expanded(
                               child: _buildTypeButton(
-                                label: 'Gain',
+                                label: AppTranslations.t(context, 'gain'),
                                 type: 'gain',
                                 activeColor: const Color(0xFF09BC8A),
                               ),
@@ -266,7 +267,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             const SizedBox(width: 12.0),
                             Expanded(
                               child: _buildTypeButton(
-                                label: 'Spend',
+                                label: AppTranslations.t(context, 'spend'),
                                 type: 'spend',
                                 activeColor: const Color(0xFFE05D5D),
                               ),
@@ -281,9 +282,9 @@ class _DashboardPageState extends State<DashboardPage> {
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
-                            labelText: 'Amount (\$)',
+                            labelText: AppTranslations.t(context, 'amount') + ' (₹)',
                             labelStyle: const TextStyle(color: Colors.grey),
-                            prefixIcon: const Icon(Icons.attach_money, color: Colors.grey),
+                            prefixIcon: const Icon(Icons.currency_rupee, color: Colors.grey),
                             filled: true,
                             fillColor: const Color(0xFF12121F),
                             enabledBorder: OutlineInputBorder(
@@ -314,7 +315,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           controller: _descriptionController,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
-                            labelText: 'Description (Optional)',
+                            labelText: AppTranslations.t(context, 'description'),
                             labelStyle: const TextStyle(color: Colors.grey),
                             prefixIcon: const Icon(Icons.description, color: Colors.grey),
                             filled: true,
@@ -405,9 +406,9 @@ class _DashboardPageState extends State<DashboardPage> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                               elevation: 2,
                             ),
-                            child: const Text(
-                              'Save Entry',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+                            child: Text(
+                              AppTranslations.t(context, 'record'),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
                             ),
                           ),
                         ),
@@ -422,9 +423,9 @@ class _DashboardPageState extends State<DashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Recent Transactions',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  Text(
+                    AppTranslations.t(context, 'recent_transactions'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   IconButton(
                     onPressed: _fetchData,
@@ -443,10 +444,13 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
                         )
                       : _transactions.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Padding(
-                                padding: EdgeInsets.all(32.0),
-                                child: Text('No transactions recorded yet.', style: TextStyle(color: Colors.grey)),
+                                padding: const EdgeInsets.all(32.0),
+                                child: Text(
+                                  AppTranslations.t(context, 'no_transactions'),
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -513,7 +517,7 @@ class _DashboardPageState extends State<DashboardPage> {
     required Color color,
     required IconData icon,
   }) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
     return Card(
       color: const Color(0xFF1E1E2E),
       elevation: 3,

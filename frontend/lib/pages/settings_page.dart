@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
+import '../services/translations.dart';
+import '../services/notification_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -64,15 +66,15 @@ class _SettingsPageState extends State<SettingsPage> {
     final newUrl = _urlController.text.trim();
     if (newUrl.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('API URL cannot be empty')),
+        SnackBar(content: Text(AppTranslations.t(context, 'api_url_empty'))),
       );
       return;
     }
     
     Provider.of<ApiConfig>(context, listen: false).updateBaseUrl(newUrl);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Settings saved successfully!'),
+      SnackBar(
+        content: Text(AppTranslations.t(context, 'save_settings_success')),
         backgroundColor: Colors.cyan,
       ),
     );
@@ -97,21 +99,117 @@ class _SettingsPageState extends State<SettingsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.settings_suggest, color: Colors.cyan, size: 28),
-                        SizedBox(width: 12),
+                      children: [
+                        const Icon(Icons.settings_suggest, color: Colors.cyan, size: 28),
+                        const SizedBox(width: 12),
                         Text(
-                          'System Configurations',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          AppTranslations.t(context, 'sys_config'),
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Configure your API endpoints to interface with the Python backend & Supabase.',
+                      AppTranslations.t(context, 'config_desc'),
                       style: TextStyle(color: Colors.grey[400], fontSize: 13),
                     ),
                   ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Preferences Card (Language & Notifications)
+            Card(
+              color: const Color(0xFF1E1E2E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Consumer<ApiConfig>(
+                  builder: (context, apiConfig, child) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.translate, color: Colors.cyan, size: 22),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppTranslations.t(context, 'language'),
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: apiConfig.languageCode,
+                          dropdownColor: const Color(0xFF1E1E2E),
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color(0xFF12121F),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                              borderSide: const BorderSide(color: Colors.cyan),
+                            ),
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                              value: 'en',
+                              child: Text(AppTranslations.t(context, 'english')),
+                            ),
+                            DropdownMenuItem(
+                              value: 'ta',
+                              child: Text(AppTranslations.t(context, 'tamil')),
+                            ),
+                          ],
+                          onChanged: (String? value) {
+                            if (value != null) {
+                              apiConfig.updateLanguage(value);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Icon(Icons.notifications_active_outlined, color: Colors.cyan, size: 22),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppTranslations.t(context, 'notifications'),
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SwitchListTile(
+                          title: Text(
+                            AppTranslations.t(context, apiConfig.notificationsEnabled ? 'on' : 'off'),
+                            style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                          value: apiConfig.notificationsEnabled,
+                          activeColor: Colors.cyanAccent,
+                          contentPadding: EdgeInsets.zero,
+                          onChanged: (bool value) async {
+                            apiConfig.updateNotifications(value);
+                            if (value) {
+                              await AppNotificationService.requestPermissions();
+                              try {
+                                final apiService = ApiService(apiConfig);
+                                final debts = await apiService.getDebts();
+                                await AppNotificationService.scheduleDebtReminders(debts, true);
+                              } catch (_) {}
+                            } else {
+                              await AppNotificationService.cancelAll();
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -126,9 +224,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Backend Connection Settings',
-                      style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                    Text(
+                      AppTranslations.t(context, 'backend_settings'),
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
 
@@ -136,7 +234,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       controller: _urlController,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        labelText: 'API Base URL',
+                        labelText: AppTranslations.t(context, 'api_base_url'),
                         labelStyle: const TextStyle(color: Colors.grey),
                         prefixIcon: const Icon(Icons.link, color: Colors.grey),
                         filled: true,
@@ -168,7 +266,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             icon: _testingConnection
                                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyan))
                                 : const Icon(Icons.sync, size: 18),
-                            label: const Text('Test Connection', style: TextStyle(fontWeight: FontWeight.bold)),
+                            label: Text(AppTranslations.t(context, 'test_connection'), style: const TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -182,7 +280,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               padding: const EdgeInsets.symmetric(vertical: 12.0),
                             ),
                             icon: const Icon(Icons.save, size: 18),
-                            label: const Text('Save URL', style: TextStyle(fontWeight: FontWeight.bold)),
+                            label: Text(AppTranslations.t(context, 'save_url'), style: const TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -222,9 +320,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Setup Instructions',
-                      style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                    Text(
+                      AppTranslations.t(context, 'setup_inst'),
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
                     _buildHelpBullet('1. Deploy your backend project to Vercel or run it locally.'),

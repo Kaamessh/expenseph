@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../services/translations.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -59,7 +60,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Active Session Profile',
+                    AppTranslations.t(context, 'profile_header'),
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.cyanAccent.withOpacity(0.7),
@@ -73,23 +74,23 @@ class ProfilePage extends StatelessWidget {
 
             // Account Details Card
             _buildProfileCard(
-              title: 'Account Information',
+              title: AppTranslations.t(context, 'active_session_details'),
               icon: Icons.account_box_rounded,
               children: [
                 _buildInfoRow(
-                  label: 'Email Address',
+                  label: AppTranslations.t(context, 'email_address'),
                   value: apiConfig.email ?? 'N/A',
                   icon: Icons.email_outlined,
                 ),
                 const Divider(color: Colors.grey, height: 24, thickness: 0.1),
                 _buildInfoRow(
-                  label: 'Mobile Number',
+                  label: AppTranslations.t(context, 'mobile_number'),
                   value: apiConfig.mobileNumber ?? 'N/A',
                   icon: Icons.phone_android_outlined,
                 ),
                 const Divider(color: Colors.grey, height: 24, thickness: 0.1),
                 _buildInfoRow(
-                  label: 'User Session ID',
+                  label: AppTranslations.t(context, 'user_id'),
                   value: apiConfig.userId ?? 'N/A',
                   icon: Icons.vpn_key_outlined,
                 ),
@@ -99,17 +100,17 @@ class ProfilePage extends StatelessWidget {
 
             // Server connection details
             _buildProfileCard(
-              title: 'Server Configuration',
+              title: AppTranslations.t(context, 'backend_settings'),
               icon: Icons.dns_rounded,
               children: [
                 _buildInfoRow(
-                  label: 'API Base URL',
+                  label: AppTranslations.t(context, 'api_base_url'),
                   value: apiConfig.baseUrl,
                   icon: Icons.link_rounded,
                 ),
                 const Divider(color: Colors.grey, height: 24, thickness: 0.1),
                 _buildInfoRow(
-                  label: 'Database Sync',
+                  label: AppTranslations.t(context, 'test_status'),
                   value: 'Connected (Supabase)',
                   icon: Icons.cloud_done_outlined,
                   valueColor: Colors.greenAccent,

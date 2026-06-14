@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../services/api_service.dart';
+import '../services/translations.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -203,7 +204,9 @@ class _AuthPageState extends State<AuthPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isSignUp ? 'Registration successful!' : 'Welcome back!'),
+            content: Text(_isSignUp 
+                ? AppTranslations.t(context, 'registration_success') 
+                : AppTranslations.t(context, 'welcome_back')),
             backgroundColor: Colors.cyan[700],
             behavior: SnackBarBehavior.floating,
           ),
@@ -328,7 +331,7 @@ class _AuthPageState extends State<AuthPage> {
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     alignment: Alignment.center,
                                     child: Text(
-                                      'Login',
+                                      AppTranslations.t(context, 'login'),
                                       style: TextStyle(
                                         color: !_isSignUp ? Colors.cyanAccent : Colors.grey[400],
                                         fontWeight: !_isSignUp ? FontWeight.bold : FontWeight.normal,
@@ -356,7 +359,7 @@ class _AuthPageState extends State<AuthPage> {
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     alignment: Alignment.center,
                                     child: Text(
-                                      'Sign Up',
+                                      AppTranslations.t(context, 'signup'),
                                       style: TextStyle(
                                         color: _isSignUp ? Colors.cyanAccent : Colors.grey[400],
                                         fontWeight: _isSignUp ? FontWeight.bold : FontWeight.normal,
@@ -403,57 +406,57 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _loginUsernameController,
                             style: const TextStyle(color: Colors.white),
                             decoration: _buildInputDecoration(
-                              label: 'Email ID or Mobile Number',
+                              label: AppTranslations.t(context, 'username_label'),
                               icon: Icons.person_outline,
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                    return 'Please enter your email or mobile number';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ] else ...[
-                              // Register Email Field
-                              TextFormField(
-                                controller: _emailController,
-                                style: const TextStyle(color: Colors.white),
-                                keyboardType: TextInputType.emailAddress,
-                                decoration: _buildInputDecoration(
-                                  label: 'Email Address',
-                                  icon: Icons.email_outlined,
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Please enter an email address';
-                                  }
-                                  final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                                  if (!regex.hasMatch(value.trim())) {
-                                    return 'Enter a valid email address';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              // Register Mobile Number Field
-                              TextFormField(
-                                controller: _mobileController,
-                                style: const TextStyle(color: Colors.white),
-                                keyboardType: TextInputType.phone,
-                                decoration: _buildInputDecoration(
-                                  label: 'Mobile Number',
-                                  icon: Icons.phone_android_outlined,
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Please enter your mobile number';
-                                  }
-                                  if (value.trim().length < 8) {
-                                    return 'Enter a valid mobile number';
-                                  }
-                                  return null;
-                                },
-                              ),
+                                return 'Please enter your email or mobile number';
+                              }
+                              return null;
+                            },
+                          ),
+                        ] else ...[
+                          // Register Email Field
+                          TextFormField(
+                            controller: _emailController,
+                            style: const TextStyle(color: Colors.white),
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: _buildInputDecoration(
+                              label: AppTranslations.t(context, 'email_address'),
+                              icon: Icons.email_outlined,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter an email address';
+                              }
+                              final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                              if (!regex.hasMatch(value.trim())) {
+                                return 'Enter a valid email address';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          // Register Mobile Number Field
+                          TextFormField(
+                            controller: _mobileController,
+                            style: const TextStyle(color: Colors.white),
+                            keyboardType: TextInputType.phone,
+                            decoration: _buildInputDecoration(
+                              label: AppTranslations.t(context, 'mobile_number'),
+                              icon: Icons.phone_android_outlined,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter your mobile number';
+                              }
+                              if (value.trim().length < 8) {
+                                return 'Enter a valid mobile number';
+                              }
+                              return null;
+                            },
+                          ),
                             ],
 
                             const SizedBox(height: 16),
@@ -464,7 +467,7 @@ class _AuthPageState extends State<AuthPage> {
                               obscureText: _obscurePassword,
                               style: const TextStyle(color: Colors.white),
                               decoration: _buildInputDecoration(
-                                label: 'Password',
+                                label: AppTranslations.t(context, 'password'),
                                 icon: Icons.lock_outline,
                                 suffix: IconButton(
                                   icon: Icon(
@@ -517,7 +520,9 @@ class _AuthPageState extends State<AuthPage> {
                                         ),
                                       )
                                     : Text(
-                                        _isSignUp ? 'CREATE ACCOUNT' : 'LOGIN TO APP',
+                                        _isSignUp 
+                                            ? AppTranslations.t(context, 'create_account') 
+                                            : AppTranslations.t(context, 'login_to_app'),
                                         style: const TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.bold,

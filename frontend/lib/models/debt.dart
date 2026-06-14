@@ -6,6 +6,7 @@ class Debt {
   final DateTime createdAt;
   final double accruedInterest; // Computed by API
   final double totalDebt; // Computed by API: originalAmount + accruedInterest
+  final int dueDay;
 
   Debt({
     required this.id,
@@ -15,6 +16,7 @@ class Debt {
     required this.createdAt,
     required this.accruedInterest,
     required this.totalDebt,
+    required this.dueDay,
   });
 
   factory Debt.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class Debt {
       createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
       accruedInterest: (json['accrued_interest'] as num?)?.toDouble() ?? 0.0,
       totalDebt: (json['total_debt'] as num?)?.toDouble() ?? 0.0,
+      dueDay: json['due_day'] as int? ?? 1,
     );
   }
 
@@ -35,6 +38,7 @@ class Debt {
       'original_amount': originalAmount,
       'interest_rate': interestRate,
       'created_at': createdAt.toIso8601String(),
+      'due_day': dueDay,
     };
   }
 }

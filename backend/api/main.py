@@ -16,7 +16,7 @@ load_dotenv()
 app = FastAPI(
     title="Expense & Debt Tracker API",
     description="Backend API serving the Expense & Debt Tracker app, connected to Supabase.",
-    version="1.9.0"
+    version="2.0.0"
 )
 
 # Enable CORS for Flutter Client access
@@ -105,7 +105,8 @@ mock_debts = [
         "person_name": "John Doe",
         "original_amount": 1000.0,
         "interest_rate": 8.5,
-        "created_at": (datetime.now(timezone.utc) - timedelta(days=45)).isoformat()
+        "created_at": (datetime.now(timezone.utc) - timedelta(days=45)).isoformat(),
+        "due_day": 1
     }
 ]
 
@@ -131,12 +132,14 @@ class DebtCreate(BaseModel):
     original_amount: float = Field(..., description="Principal debt amount")
     interest_rate: float = Field(..., description="Annual interest rate in %")
     created_at: Optional[datetime] = Field(None, description="Debt issue date. Defaults to now.")
+    due_day: Optional[int] = Field(1, description="Due day of the month for interest payments (1-31)")
 
 class DebtUpdate(BaseModel):
     person_name: Optional[str] = None
     original_amount: Optional[float] = None
     interest_rate: Optional[float] = None
     created_at: Optional[datetime] = None
+    due_day: Optional[int] = None
 
 
 # --- HELPER FUNCTIONS ---
@@ -187,7 +190,7 @@ def get_health():
 @app.get("/api/version")
 def get_version():
     return {
-        "version": "1.9.0",
+        "version": "2.0.0",
         "apk_url": "https://expenseph.vercel.app/app-release.apk"
     }
 
@@ -415,7 +418,8 @@ def create_debt(debt: DebtCreate, x_user_id: str = Header(...)):
         "person_name": debt.person_name,
         "original_amount": debt.original_amount,
         "interest_rate": debt.interest_rate,
-        "created_at": created.isoformat()
+        "created_at": created.isoformat(),
+        "due_day": debt.due_day if debt.due_day is not None else 1
     }
     
     if not is_mock_mode:
@@ -459,6 +463,10 @@ def update_debt(debt_id: str, updates: DebtUpdate, x_user_id: str = Header(...))
         payload["interest_rate"] = updates.interest_rate
     if updates.created_at is not None:
         payload["created_at"] = updates.created_at.isoformat()
+    if updates.due_day is not None:
+        if updates.due_day < 1 or updates.due_day > 31:
+            raise HTTPException(status_code=400, detail="Due day must be between 1 and 31")
+        payload["due_day"] = updates.due_day
         
     if not payload:
         raise HTTPException(status_code=400, detail="No updates provided")
